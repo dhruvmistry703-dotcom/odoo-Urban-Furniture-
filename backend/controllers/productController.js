@@ -2,7 +2,7 @@ import Product from '../models/Product.js';
 
 // @desc    Get all products
 // @route   GET /api/products
-// @access  Protected (ADMIN, ACCOUNTANT)
+// @access  Public / Protected
 export const getProducts = async (req, res, next) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
@@ -11,6 +11,28 @@ export const getProducts = async (req, res, next) => {
       count: products.length,
       products,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all unique categories
+// @route   GET /api/products/categories
+export const getProductCategories = async (req, res, next) => {
+  try {
+    const categories = await Product.distinct('category');
+    const defaultCats = [
+      'Furniture',
+      'Seating',
+      'Tables',
+      'Living & Lounge',
+      'Dining',
+      'Storage',
+      'Electronics',
+      'Services',
+    ];
+    const combined = Array.from(new Set([...defaultCats, ...categories.filter(Boolean)]));
+    res.status(200).json({ success: true, categories: combined });
   } catch (error) {
     next(error);
   }

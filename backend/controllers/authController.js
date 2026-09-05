@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Contact from '../models/Contact.js';
 
 // Helper to generate JWT
 export const generateToken = (user) => {
@@ -57,12 +58,22 @@ export const register = async (req, res, next) => {
       });
     }
 
+    let resolvedContactId = contactId || null;
+
+    // Auto-discover / link Contact master if role is CONTACT
+    if (requestedRole === 'CONTACT' && !resolvedContactId) {
+      const matchedContact = await Contact.findOne({ email: email.toLowerCase() });
+      if (matchedContact) {
+        resolvedContactId = matchedContact._id;
+      }
+    }
+
     const user = await User.create({
       name,
       email: email.toLowerCase(),
       password,
       role: requestedRole,
-      contactId: requestedRole === 'CONTACT' ? contactId : null,
+      contactId: requestedRole === 'CONTACT' ? resolvedContactId : null,
       isActive: true,
     });
 
@@ -130,6 +141,15 @@ export const login = async (req, res, next) => {
         success: false,
         message: 'Invalid email or password credentials',
       });
+    }
+
+    // Smart resolution if contactId is missing for CONTACT role
+    if (user.role === 'CONTACT' && !user.contactId) {
+      const matchedContact = await Contact.findOne({ email: email.toLowerCase() });
+      if (matchedContact) {
+        user.contactId = matchedContact._id;
+        await user.save();
+      }
     }
 
     const token = generateToken(user);
