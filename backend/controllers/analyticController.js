@@ -104,20 +104,20 @@ export const updateAnalyticAccount = async (req, res, next) => {
 
     let analytic = null;
     if (mongoose.Types.ObjectId.isValid(req.params.id)) {
-      analytic = await AnalyticAccount.findByIdAndUpdate(req.params.id, updates, {
-        new: true,
-      });
+      analytic = await AnalyticAccount.findById(req.params.id);
     } else {
-      analytic = await AnalyticAccount.findOneAndUpdate(
-        { $or: [{ code: req.params.id }, { name: req.params.id }] },
-        updates,
-        { new: true }
-      );
+      analytic = await AnalyticAccount.findOne({
+        $or: [{ code: req.params.id }, { name: req.params.id }],
+      });
     }
 
     if (!analytic) {
       return res.status(404).json({ success: false, message: 'Analytic account not found' });
     }
+
+    Object.assign(analytic, updates);
+    await analytic.save();
+
     res.status(200).json({ success: true, analyticAccount: analytic });
   } catch (error) {
     next(error);
@@ -182,6 +182,29 @@ export const getAnalyticAccountBudgets = async (req, res, next) => {
       success: true,
       count: budgets.length,
       budgets,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete analytic account
+// @route   DELETE /api/analytics/:id
+// @access  Protected (ADMIN, ACCOUNTANT)
+export const deleteAnalyticAccount = async (req, res, next) => {
+  try {
+    const analytic = await AnalyticAccount.findById(req.params.id);
+    if (!analytic) {
+      return res.status(404).json({ success: false, message: 'Analytic account not found' });
+    }
+
+    // Also remove or unlink linked budgets if needed
+    await Budget.deleteMany({ analyticAccountId: analytic._id });
+    await analytic.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'Analytic account and linked budgets deleted successfully',
     });
   } catch (error) {
     next(error);

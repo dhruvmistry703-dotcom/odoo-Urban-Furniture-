@@ -54,6 +54,11 @@ export const BudgetDetail: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingTx, setLoadingTx] = useState(false);
 
+  const matchesBudgetId = (b: Budget, targetId: string) => {
+    const candidates = [b.id, b._id, typeof b._id === 'object' ? String(b._id) : null];
+    return candidates.some(v => v && String(v) === String(targetId));
+  };
+
   const fetchBudgetAndMeta = useCallback(async () => {
     if (!id) return;
     try {
@@ -67,7 +72,7 @@ export const BudgetDetail: React.FC = () => {
       if (resBudget.status === 'fulfilled' && resBudget.value?.budget) {
         setBudget(resBudget.value.budget);
       } else {
-        const localFallback = contextBudgets.find(b => b.id === id || b._id === id);
+        const localFallback = contextBudgets.find(b => matchesBudgetId(b, id));
         if (localFallback) {
           setBudget(localFallback as any);
         } else {
@@ -88,7 +93,7 @@ export const BudgetDetail: React.FC = () => {
         setContacts(resContacts.value.contacts);
       }
     } catch (err: any) {
-      const localFallback = contextBudgets.find(b => b.id === id || b._id === id);
+      const localFallback = contextBudgets.find(b => matchesBudgetId(b, id));
       if (localFallback) {
         setBudget(localFallback as any);
       } else {
@@ -105,7 +110,9 @@ export const BudgetDetail: React.FC = () => {
 
   useEffect(() => {
     fetchBudgetAndMeta();
-  }, [fetchBudgetAndMeta]);
+    // Load once per budget id; ignore context identity churn that retriggers Strict Mode toasts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // Stage 1 -> 2: Confirm newly created budget
   const handleConfirm = async () => {
@@ -261,7 +268,10 @@ export const BudgetDetail: React.FC = () => {
   const isCancelled = normStatus === 'CANCELLED' || normStatus === 'ARCHIVED';
 
   // Resolved metadata
-  const anaObj = typeof budget.analyticAccountId === 'object' ? (budget.analyticAccountId as AnalyticAccount) : null;
+  const anaObj =
+    budget.analyticAccountId && typeof budget.analyticAccountId === 'object'
+      ? (budget.analyticAccountId as AnalyticAccount)
+      : analytics.find(a => (a._id || a.id) === budget.analyticAccountId) || null;
   const anaName = anaObj?.name || budget.analyticAccountName || 'General Center';
   const anaType = String(budget.type || anaObj?.type || 'Expenses').toLowerCase() === 'income' ? 'Income' : 'Expenses';
 

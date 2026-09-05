@@ -241,7 +241,7 @@ export const AnalyticAccountForm: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* Top Header & Horizontal Action Bar */}
       <PageHeader
         title={isNew ? 'New Analytic Account' : name || 'Analytic Account'}
@@ -284,11 +284,11 @@ export const AnalyticAccountForm: React.FC = () => {
       />
 
       {/* Main Form Section */}
-      <Card className="p-6">
-        <form onSubmit={handleConfirm} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card noPadding className="overflow-visible">
+        <form onSubmit={handleConfirm} className="p-6 sm:p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-7">
             {/* 1. Analytic Account Name Field */}
-            <div>
+            <div className="min-w-0">
               <Input
                 label="Analytic Account"
                 required
@@ -303,7 +303,7 @@ export const AnalyticAccountForm: React.FC = () => {
             </div>
 
             {/* 2. Type Dropdown Field */}
-            <div>
+            <div className="min-w-0">
               <Select
                 label="Type"
                 required
@@ -322,18 +322,19 @@ export const AnalyticAccountForm: React.FC = () => {
             </div>
 
             {/* Optional Analytic Code Field */}
-            <div>
+            <div className="min-w-0">
               <Input
                 label="Analytic Code"
                 placeholder="e.g. ANA-EXP-001 (auto-generated if empty)"
                 value={code}
                 onChange={e => setCode(e.target.value)}
-                helperText="Unique reference code for accounting entries"
+                helperText="Reference code for accounting entries"
+                className={!isNew && code ? 'bg-sky-50/80 dark:bg-navy-950' : ''}
               />
             </div>
 
             {/* Optional Description Field */}
-            <div>
+            <div className="min-w-0">
               <Input
                 label="Description"
                 placeholder="e.g. Operational cost tracking for head office renovations"
@@ -345,27 +346,27 @@ export const AnalyticAccountForm: React.FC = () => {
           </div>
 
           {/* Clean Horizontal Divider */}
-          <div className="border-t border-slate-200 dark:border-navy-700 pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-emerald-500" />
+          <div className="border-t border-slate-200 dark:border-navy-700 pt-6 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <div className="flex items-center gap-2 min-w-0">
+                <Layers className="w-5 h-5 text-emerald-500 shrink-0" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">Budget Usage</h3>
               </div>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-500 shrink-0">
                 {budgets.length} {budgets.length === 1 ? 'Budget' : 'Budgets'} linked to this Analytic Account
               </span>
             </div>
 
             {/* Budget Usage Table */}
-            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-navy-700">
-              <table className="w-full text-left text-xs">
+            <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200 dark:border-navy-700">
+              <table className="w-full min-w-[640px] text-left text-xs table-auto">
                 <thead className="bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-navy-700 uppercase tracking-wider">
                   <tr>
-                    <th className="px-4 py-3.5">Budget</th>
-                    <th className="px-4 py-3.5">Start Date</th>
-                    <th className="px-4 py-3.5">End Date</th>
-                    <th className="px-4 py-3.5 text-right">Committed</th>
-                    <th className="px-4 py-3.5 text-right">Achieved</th>
+                    <th className="px-4 py-3.5 whitespace-nowrap text-left">Budget</th>
+                    <th className="px-4 py-3.5 whitespace-nowrap">Start Date</th>
+                    <th className="px-4 py-3.5 whitespace-nowrap">End Date</th>
+                    <th className="px-4 py-3.5 whitespace-nowrap text-right">Committed</th>
+                    <th className="px-4 py-3.5 whitespace-nowrap text-right">Achieved</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-navy-700/60 bg-white dark:bg-navy-800">
@@ -393,46 +394,52 @@ export const AnalyticAccountForm: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    budgets.map(b => (
-                      <tr
-                        key={b._id || b.id}
-                        className="hover:bg-slate-50/80 dark:hover:bg-navy-700/40 transition-colors"
-                      >
-                        <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                          <Target className="w-4 h-4 text-emerald-500 shrink-0" />
-                          <span>{b.name}</span>
-                          {b.status && (
-                            <span className="ml-1">
-                              <Badge
-                                variant={
-                                  b.status === 'CONFIRMED'
-                                    ? 'success'
-                                    : b.status === 'REVISED'
-                                    ? 'warning'
-                                    : b.status === 'CANCELLED'
-                                    ? 'danger'
-                                    : 'default'
-                                }
-                              >
-                                {b.status}
-                              </Badge>
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3.5 text-slate-600 dark:text-slate-400 font-mono">
-                          {formatDate(b.startDate)}
-                        </td>
-                        <td className="px-4 py-3.5 text-slate-600 dark:text-slate-400 font-mono">
-                          {formatDate(b.endDate)}
-                        </td>
-                        <td className="px-4 py-3.5 text-right font-bold text-slate-900 dark:text-white">
-                          {formatCurrency(b.planned)}
-                        </td>
-                        <td className="px-4 py-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                          {formatCurrency(b.actual || 0)}
-                        </td>
-                      </tr>
-                    ))
+                    budgets.map(b => {
+                      const budgetId = b._id || b.id;
+                      return (
+                        <tr
+                          key={budgetId}
+                          className="hover:bg-slate-50/80 dark:hover:bg-navy-700/40 transition-colors cursor-pointer"
+                          onClick={() => budgetId && navigate(`/budgets/${budgetId}`)}
+                        >
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white min-w-0">
+                              <Target className="w-4 h-4 text-emerald-500 shrink-0" />
+                              <span className="truncate">{b.name}</span>
+                              {b.status && (
+                                <span className="ml-1 shrink-0">
+                                  <Badge
+                                    variant={
+                                      b.status === 'CONFIRMED'
+                                        ? 'success'
+                                        : b.status === 'REVISED'
+                                        ? 'warning'
+                                        : b.status === 'CANCELLED'
+                                        ? 'danger'
+                                        : 'default'
+                                    }
+                                  >
+                                    {b.status}
+                                  </Badge>
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">
+                            {formatDate(b.startDate)}
+                          </td>
+                          <td className="px-4 py-3.5 text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">
+                            {formatDate(b.endDate)}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                            {formatCurrency(b.planned)}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                            {formatCurrency(b.actual || 0)}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

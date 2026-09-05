@@ -146,7 +146,7 @@ export const BudgetsList: React.FC = () => {
         name: name.trim(),
         analyticAccountId: anaId,
         analyticAccountName: selectedAna?.name,
-        type: selectedAna?.type || 'Expenses',
+        type: String(selectedAna?.type || '').toLowerCase() === 'income' ? 'Income' : 'Expenses',
         startDate,
         endDate,
         period: computedPeriod,
@@ -419,12 +419,12 @@ export const BudgetsList: React.FC = () => {
         </div>
 
         {/* Budget Table with Achieved Amount and Percentage */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="w-full min-w-0 overflow-x-auto">
+          <table className="w-full min-w-[960px] text-left text-xs table-auto">
             <thead className="bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-navy-700 uppercase tracking-wider">
               <tr>
-                <th className="px-4 py-3.5">Budget Title</th>
-                <th className="px-4 py-3.5">Analytic Center</th>
+                <th className="px-4 py-3.5 whitespace-nowrap text-left">Budget Title</th>
+                <th className="px-4 py-3.5 whitespace-nowrap">Analytic Center</th>
                 <th className="px-4 py-3.5">Period (Dates)</th>
                 <th className="px-4 py-3.5">Responsible Person</th>
                 <th className="px-4 py-3.5 text-right">Planned (Committed)</th>
@@ -475,15 +475,17 @@ export const BudgetsList: React.FC = () => {
                       className="hover:bg-slate-50/80 dark:hover:bg-navy-700/40 transition-colors cursor-pointer"
                       onClick={() => navigate(`/budgets/${bId}`)}
                     >
-                      <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Target className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <div>
-                          <span>{b.name}</span>
-                          {b.revisions && b.revisions.length > 0 && (
-                            <span className="ml-2 inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                              Rev #{b.revisions.length}
-                            </span>
-                          )}
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white min-w-0">
+                          <Target className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <div className="min-w-0">
+                            <span className="truncate block">{b.name}</span>
+                            {b.revisions && b.revisions.length > 0 && (
+                              <span className="ml-2 inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                Rev #{b.revisions.length}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3.5 font-medium text-slate-700 dark:text-slate-300">

@@ -57,7 +57,16 @@ const computeAchievedTransactions = async (budget) => {
       budget.actual = totalAchieved;
       budget.remaining = Math.max(0, budget.planned - totalAchieved);
       budget.utilization = budget.planned > 0 ? (totalAchieved / budget.planned) * 100 : 0;
-      await budget.save();
+      await Budget.updateOne(
+        { _id: budget._id },
+        {
+          $set: {
+            actual: budget.actual,
+            remaining: budget.remaining,
+            utilization: budget.utilization,
+          },
+        }
+      );
     }
 
     return { totalAchieved, matchedTransactions };
@@ -468,6 +477,27 @@ export const cancelBudget = async (req, res, next) => {
       success: true,
       message: 'Budget has been cancelled.',
       budget,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete budget permanently
+// @route   DELETE /api/budgets/:id
+// @access  Protected (ADMIN, ACCOUNTANT)
+export const deleteBudget = async (req, res, next) => {
+  try {
+    const budget = await Budget.findById(req.params.id);
+    if (!budget) {
+      return res.status(404).json({ success: false, message: 'Budget not found' });
+    }
+
+    await budget.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'Budget deleted successfully.',
     });
   } catch (error) {
     next(error);

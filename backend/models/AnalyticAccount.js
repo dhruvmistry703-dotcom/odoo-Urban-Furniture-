@@ -15,6 +15,10 @@ const analyticAccountSchema = new mongoose.Schema(
       type: String,
       required: true,
       default: 'Expenses',
+      enum: ['Income', 'Expenses', 'income', 'expense', 'Expense'],
+      set: function (v) {
+        return String(v || '').toLowerCase() === 'income' ? 'Income' : 'Expenses';
+      },
     },
     description: {
       type: String,

@@ -5,6 +5,7 @@ import {
   createAnalyticAccount,
   updateAnalyticAccount,
   archiveAnalyticAccount,
+  deleteAnalyticAccount,
   getAnalyticAccountBudgets,
 } from '../controllers/analyticController.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -20,7 +21,8 @@ router.route('/')
 
 router.route('/:id')
   .get(authorizeRoles('ADMIN', 'ACCOUNTANT'), getAnalyticAccountById)
-  .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), updateAnalyticAccount);
+  .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), updateAnalyticAccount)
+  .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), deleteAnalyticAccount);
 
 router.get('/:id/budgets', authorizeRoles('ADMIN', 'ACCOUNTANT'), getAnalyticAccountBudgets);
 router.patch('/:id/archive', authorizeRoles('ADMIN'), archiveAnalyticAccount);

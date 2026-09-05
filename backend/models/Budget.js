@@ -31,8 +31,11 @@ const budgetSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['Income', 'Expenses', 'income', 'expense'],
+      enum: ['Income', 'Expenses', 'income', 'expense', 'Expense'],
       default: 'Expenses',
+      set: function (v) {
+        return String(v || '').toLowerCase() === 'income' ? 'Income' : 'Expenses';
+      },
     },
     responsiblePersonId: {
       type: mongoose.Schema.Types.ObjectId,
