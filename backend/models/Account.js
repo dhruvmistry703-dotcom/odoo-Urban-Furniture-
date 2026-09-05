@@ -4,8 +4,8 @@ const accountSchema = new mongoose.Schema(
   {
     code: {
       type: String,
-      required: [true, 'Account code is required'],
       unique: true,
+      sparse: true,
       trim: true,
     },
     name: {
@@ -15,8 +15,8 @@ const accountSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['asset', 'liability', 'income', 'expense', 'capital'],
       required: true,
+      trim: true,
     },
     parentAccountId: {
       type: mongoose.Schema.Types.ObjectId,

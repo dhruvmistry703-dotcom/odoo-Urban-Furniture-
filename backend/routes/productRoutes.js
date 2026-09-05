@@ -5,22 +5,25 @@ import {
   createProduct,
   updateProduct,
   archiveProduct,
+  getProductCategories,
 } from '../controllers/productController.js';
-import { protect } from '../middleware/authMiddleware.js';
-import { authorizeRoles } from '../middleware/roleMiddleware.js';
+import { optionalProtect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.use(protect);
+router.use(optionalProtect);
+
+// Categories route before /:id
+router.get('/categories', getProductCategories);
 
 router.route('/')
-  .get(authorizeRoles('ADMIN', 'ACCOUNTANT'), getProducts)
-  .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), createProduct);
+  .get(getProducts)
+  .post(createProduct);
 
 router.route('/:id')
-  .get(authorizeRoles('ADMIN', 'ACCOUNTANT'), getProductById)
-  .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), updateProduct);
+  .get(getProductById)
+  .put(updateProduct);
 
-router.patch('/:id/archive', authorizeRoles('ADMIN'), archiveProduct);
+router.patch('/:id/archive', archiveProduct);
 
 export default router;

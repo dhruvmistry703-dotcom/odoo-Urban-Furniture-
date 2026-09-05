@@ -1,354 +1,268 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, Eye, KeyRound, Shield, Check } from 'lucide-react';
-import { PageHeader } from '../../components/ui/PageHeader';
-import { Button } from '../../components/ui/Button';
+import { Mail, Phone, MapPin, Building, ShieldCheck } from 'lucide-react';
+import { MasterToolbar } from '../../components/common/MasterToolbar';
 import { Badge } from '../../components/ui/Badge';
-import { Modal } from '../../components/ui/Modal';
-import { Input } from '../../components/ui/Input';
-import { Select } from '../../components/ui/Select';
-import { Card } from '../../components/ui/Card';
 import { useData } from '../../context/DataContext';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
 import { ContactType } from '../../types';
-import { api } from '../../services/api';
 
 export const ContactsList: React.FC = () => {
-  const { contacts, addContact } = useData();
-  const { user } = useAuth();
-  const { showToast } = useToast();
+  const { contacts } = useData();
   const navigate = useNavigate();
 
-  const [query, setQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeView, setActiveView] = useState<'list' | 'kanban'>('list');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | ContactType>('all');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // New Contact Form state
-  const [name, setName] = useState('');
-  const [type, setType] = useState<ContactType>('customer');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [taxId, setTaxId] = useState('');
-  const [createLoginAccount, setCreateLoginAccount] = useState<boolean>(false);
-  const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const filteredContacts = contacts.filter(c => {
+    const term = searchTerm.toLowerCase();
+    const matchesSearch =
+      c.name.toLowerCase().includes(term) ||
+      (c.email && c.email.toLowerCase().includes(term)) ||
+      (c.phone && c.phone.toLowerCase().includes(term)) ||
+      (c.city && c.city.toLowerCase().includes(term)) ||
+      (c.address && c.address.toLowerCase().includes(term));
 
-  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
-
-  const filtered = contacts.filter(c => {
-    const matchesQuery =
-      c.name.toLowerCase().includes(query.toLowerCase()) ||
-      c.email.toLowerCase().includes(query.toLowerCase());
     const matchesType = typeFilter === 'all' || c.type === typeFilter;
-    return matchesQuery && matchesType;
+    return matchesSearch && matchesType;
   });
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      // 1. Create locally in state for instant UI response
-      const newContact = addContact({
-        name,
-        type,
-        email,
-        phone,
-        address,
-        taxId,
-        status: 'active',
-      });
-
-      // 2. Call backend API to persist and optionally create user account
-      if (createLoginAccount && email && password) {
-        try {
-          await api.createContact({
-            name,
-            type,
-            email,
-            phone,
-            address,
-            taxId,
-            createLoginAccount: true,
-            password,
-          });
-        } catch (apiErr) {
-          console.warn('Backend contact save error:', apiErr);
-        }
-      }
-
-      showToast({
-        type: 'success',
-        title: 'Contact Created',
-        message: `${newContact.name} added successfully as ${newContact.type}.${
-          createLoginAccount ? ' Login account provisioned with role CONTACT.' : ''
-        }`,
-      });
-
-      setIsModalOpen(false);
-      // Reset form
-      setName('');
-      setEmail('');
-      setPhone('');
-      setAddress('');
-      setTaxId('');
-      setCreateLoginAccount(false);
-      setPassword('');
-    } finally {
-      setIsSubmitting(false);
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(filteredContacts.map(c => c.id));
+    } else {
+      setSelectedIds([]);
     }
   };
 
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const isAllSelected =
+    filteredContacts.length > 0 &&
+    filteredContacts.every(c => selectedIds.includes(c.id));
+
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Contacts & Clients"
-        subtitle="Manage customer, vendor, and contractor accounts"
-        action={
-          <Button
-            variant="primary"
-            icon={<Plus className="w-4 h-4" />}
-            onClick={() => setIsModalOpen(true)}
-          >
-            Add Contact
-          </Button>
-        }
+    <div className="space-y-4">
+      {/* Top Header & Master Toolbar matching screenshot wireframe */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            Contact Master
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {activeView === 'list' ? 'Contact List View (Default)' : 'Contact Kanban View'} • Manage customers, vendors, and partners
+          </p>
+        </div>
+
+        {/* Quick Type Filter Chips */}
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-navy-750 text-xs">
+          {(['all', 'customer', 'vendor', 'both'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTypeFilter(t)}
+              className={`px-3 py-1 rounded-lg font-semibold capitalize transition-all ${
+                typeFilter === t
+                  ? 'bg-white dark:bg-navy-700 text-emerald-700 dark:text-emerald-300 shadow-2xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              {t === 'all' ? 'All Contacts' : t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Reusable Master Toolbar */}
+      <MasterToolbar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search contacts by name, email, phone, city..."
+        activeView={activeView}
+        onViewChange={setActiveView}
+        onNewClick={() => navigate('/contacts/new')}
+        onBackClick={() => navigate('/dashboard')}
+        newButtonText="New"
+        selectedCount={selectedIds.length}
       />
 
-      <Card noPadding>
-        {/* Table Toolbar */}
-        <div className="p-4 border-b border-slate-100 dark:border-navy-700/80 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="relative w-full sm:w-72">
-            <Input
-              placeholder="Search contacts..."
-              icon={<Search className="w-4 h-4" />}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-            <select
-              value={typeFilter}
-              onChange={e => setTypeFilter(e.target.value)}
-              className="text-xs bg-white dark:bg-navy-900 border border-slate-300 dark:border-navy-700 rounded-lg px-3 py-2 text-slate-700 dark:text-slate-200 focus:outline-none"
-            >
-              <option value="all">All Types</option>
-              <option value="customer">Customers</option>
-              <option value="vendor">Vendors</option>
-              <option value="both">Both</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Contacts Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-navy-700">
-              <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Email & Phone</th>
-                <th className="px-4 py-3">GST / Tax ID</th>
-                <th className="px-4 py-3">Outstanding</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-navy-700/60">
-              {filtered.map(contact => (
-                <tr
-                  key={contact.id}
-                  className="hover:bg-slate-50/80 dark:hover:bg-navy-700/40 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <div className="font-bold text-slate-900 dark:text-white text-sm">
-                      {contact.name}
-                    </div>
-                    <div className="text-[11px] text-slate-400 truncate max-w-[200px]">
-                      {contact.address}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge status={contact.type} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-slate-800 dark:text-slate-200 font-medium">
-                      {contact.email}
-                    </div>
-                    <div className="text-[11px] text-slate-400">{contact.phone}</div>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-slate-600 dark:text-slate-400">
-                    {contact.taxId || '—'}
-                  </td>
-                  <td className="px-4 py-3 font-extrabold text-slate-900 dark:text-white">
-                    {contact.outstanding > 0 ? (
-                      <span className="text-rose-600 dark:text-rose-400">
-                        ₹{contact.outstanding.toLocaleString('en-IN')}
-                      </span>
-                    ) : (
-                      <span className="text-emerald-600 dark:text-emerald-400">₹0</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge status={contact.status} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<Eye className="w-3.5 h-3.5" />}
-                        onClick={() => navigate(`/contacts/${contact.id}`)}
-                      >
-                        View
-                      </Button>
-                      {/* Archive action ONLY visible to Admin */}
-                      {isAdmin && contact.status !== 'archived' && (
-                        <button
-                          onClick={() => {
-                            showToast({
-                              type: 'info',
-                              title: 'Admin Action',
-                              message: `Archive authority verified for ${contact.name}`,
-                            });
-                          }}
-                          className="px-2 py-1 text-[10px] font-semibold text-rose-500 hover:bg-rose-500/10 rounded transition-colors"
-                          title="Admin Only Action: Archive Contact"
-                        >
-                          Archive
-                        </button>
-                      )}
-                    </div>
-                  </td>
+      {/* VIEW 1: CONTACT LIST VIEW (DEFAULT) */}
+      {activeView === 'list' && (
+        <div className="bg-white dark:bg-navy-850 rounded-2xl border border-slate-200/90 dark:border-navy-750 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-slate-50/80 dark:bg-navy-900/90 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-navy-700 select-none">
+                <tr>
+                  <th className="w-10 px-4 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      onChange={e => handleSelectAll(e.target.checked)}
+                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                      title="Select all"
+                    />
+                  </th>
+                  <th className="w-16 px-3 py-3">Image</th>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Type</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Address</th>
+                  <th className="px-4 py-3 text-right">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Add Contact Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Contact">
-        <form onSubmit={handleCreate} className="space-y-4">
-          <Input
-            label="Contact Name"
-            required
-            placeholder="e.g. Acme Commercial Interiors"
-            value={name}
-            onChange={e => setName(e.target.value)}
-          />
-
-          <Select
-            label="Contact Type"
-            options={[
-              { value: 'customer', label: 'Customer' },
-              { value: 'vendor', label: 'Vendor' },
-              { value: 'both', label: 'Both (Customer & Vendor)' },
-            ]}
-            value={type}
-            onChange={e => setType(e.target.value as ContactType)}
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label="Email Address"
-              type="email"
-              placeholder="billing@company.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-            />
-            <Input
-              label="Phone Number"
-              placeholder="+91 98765 43210"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-            />
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-navy-700/60">
+                {filteredContacts.length > 0 ? (
+                  filteredContacts.map(contact => {
+                    const isSelected = selectedIds.includes(contact.id);
+                    return (
+                      <tr
+                        key={contact.id}
+                        onClick={() => navigate(`/contacts/${contact.id}`)}
+                        className={`group cursor-pointer transition-colors ${
+                          isSelected
+                            ? 'bg-emerald-50/50 dark:bg-emerald-950/20'
+                            : 'hover:bg-slate-50/80 dark:hover:bg-navy-800/50'
+                        }`}
+                      >
+                        <td
+                          className="px-4 py-3 text-center"
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleToggleSelect(contact.id);
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelect(contact.id)}
+                            className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 dark:bg-navy-750 flex items-center justify-center border border-slate-200 dark:border-navy-700 shrink-0 shadow-2xs">
+                            {contact.image ? (
+                              <img
+                                src={contact.image}
+                                alt={contact.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+                                {contact.name.charAt(0)}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                            {contact.name}
+                          </div>
+                          {contact.taxId && (
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              GST: {contact.taxId}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge status={contact.type} />
+                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">
+                          {contact.email || '—'}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-slate-600 dark:text-slate-400">
+                          {contact.phone || '—'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400 max-w-xs truncate">
+                          {contact.city
+                            ? `${contact.city}${contact.state ? `, ${contact.state}` : ''}${contact.pincode ? ` - ${contact.pincode}` : ''}`
+                            : contact.address || '—'}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Badge status={contact.status} />
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                      No contacts found matching &ldquo;{searchTerm}&rdquo;
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
+        </div>
+      )}
 
-          <Input
-            label="GSTIN / Tax ID"
-            placeholder="27AABCA1234F1ZM"
-            value={taxId}
-            onChange={e => setTaxId(e.target.value)}
-          />
-
-          <Input
-            label="Billing & Shipping Address"
-            placeholder="Industrial Park, Mumbai..."
-            value={address}
-            onChange={e => setAddress(e.target.value)}
-          />
-
-          {/* Create Login Account Section (Admin Only) */}
-          {isAdmin && (
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-900 border border-slate-200 dark:border-navy-700 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <KeyRound className="w-3.5 h-3.5 text-emerald-500" /> Create Login Account
-                  </label>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Provision a Contact Portal user account (Role: CONTACT)
-                  </p>
+      {/* VIEW 2: CONTACT KANBAN VIEW */}
+      {activeView === 'kanban' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredContacts.length > 0 ? (
+            filteredContacts.map(contact => (
+              <div
+                key={contact.id}
+                onClick={() => navigate(`/contacts/${contact.id}`)}
+                className="group bg-white dark:bg-navy-850 rounded-2xl border border-slate-200/90 dark:border-navy-750 p-4 hover:border-emerald-500/60 hover:shadow-lg dark:hover:shadow-navy-950/50 transition-all duration-200 cursor-pointer relative overflow-hidden flex items-center gap-3.5"
+              >
+                {/* Left Side: Avatar / Profile Image box */}
+                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 dark:bg-navy-750 flex items-center justify-center shrink-0 border border-slate-200 dark:border-navy-700 shadow-2xs group-hover:scale-105 transition-transform duration-200">
+                  {contact.image ? (
+                    <img
+                      src={contact.image}
+                      alt={contact.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-extrabold text-xl text-emerald-600 dark:text-emerald-400">
+                      {contact.name.charAt(0)}
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center bg-slate-200 dark:bg-navy-800 p-1 rounded-lg">
-                  <button
-                    type="button"
-                    onClick={() => setCreateLoginAccount(false)}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                      !createLoginAccount
-                        ? 'bg-white dark:bg-navy-700 text-slate-800 dark:text-white shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
-                    }`}
-                  >
-                    No
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCreateLoginAccount(true)}
-                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                      createLoginAccount
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
-                    }`}
-                  >
-                    Yes
-                  </button>
+
+                {/* Right Side: Contact Details */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                      {contact.name}
+                    </h3>
+                    <Badge status={contact.type} />
+                  </div>
+
+                  <div className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5 truncate text-[11px]">
+                      <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span className="truncate">{contact.email || 'No email provided'}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                      <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span className="truncate">{contact.phone || 'No phone provided'}</span>
+                    </div>
+                    {(contact.city || contact.address) && (
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-400 truncate">
+                        <MapPin className="w-3 h-3 shrink-0 text-slate-400" />
+                        <span className="truncate">
+                          {contact.city || contact.address}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {createLoginAccount && (
-                <div className="pt-2 border-t border-slate-200 dark:border-navy-700 space-y-2 animate-in fade-in duration-150">
-                  <Input
-                    label="Contact User Password"
-                    type="password"
-                    required
-                    placeholder="Password for client portal login"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                  />
-                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                    <Shield className="w-3 h-3" /> Account will have strict data isolation (only sees own invoices/bills).
-                  </p>
-                </div>
-              )}
+            ))
+          ) : (
+            <div className="col-span-full py-16 text-center text-slate-400 bg-white dark:bg-navy-850 rounded-2xl border border-slate-200/80 dark:border-navy-750">
+              No contacts found matching &ldquo;{searchTerm}&rdquo;
             </div>
           )}
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-navy-700">
-            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving Contact...' : 'Save Contact'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        </div>
+      )}
     </div>
   );
 };

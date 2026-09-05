@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../services/api';
 import {
   Contact,
   Product,
@@ -26,12 +27,14 @@ import {
   initialJournals,
   initialJournalEntries,
   initialAnalyticAccounts,
-  initialBudgets
+  initialBudgets,
+  initialCategories
 } from '../data/mockData';
 
 interface DataContextType {
   contacts: Contact[];
   products: Product[];
+  categories: string[];
   salesOrders: SalesOrder[];
   invoices: CustomerInvoice[];
   purchaseOrders: PurchaseOrder[];
@@ -48,6 +51,8 @@ interface DataContextType {
   updateContact: (id: string, updates: Partial<Contact>) => void;
   addProduct: (product: Omit<Product, 'id'>) => Product;
   updateProduct: (id: string, updates: Partial<Product>) => void;
+  addCategory: (categoryName: string) => string;
+  refreshData: () => Promise<void>;
   createSalesOrder: (order: Omit<SalesOrder, 'id' | 'orderNumber' | 'subtotal' | 'taxTotal' | 'grandTotal' | 'status'> & { items: LineItem[] }) => SalesOrder;
   updateSalesOrderStatus: (id: string, status: SalesOrder['status']) => void;
   convertSOToInvoice: (soId: string) => CustomerInvoice;
@@ -68,6 +73,8 @@ interface DataContextType {
     notes?: string;
   }) => { payment: Payment; journalEntry: JournalEntry };
   addAccount: (account: Omit<Account, 'id' | 'balance'>) => Account;
+  updateAccount: (id: string, updates: Partial<Account>) => void;
+  archiveAccount: (id: string) => void;
   addJournal: (journal: Omit<Journal, 'id'>) => Journal;
   addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'entryNumber' | 'isBalanced'>) => JournalEntry;
   addAnalyticAccount: (account: Omit<AnalyticAccount, 'id'>) => AnalyticAccount;
@@ -90,6 +97,7 @@ const getStored = <T,>(key: string, fallback: T): T => {
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [contacts, setContacts] = useState<Contact[]>(() => getStored('contacts', initialContacts));
   const [products, setProducts] = useState<Product[]>(() => getStored('products', initialProducts));
+  const [categories, setCategories] = useState<string[]>(() => getStored('categories', initialCategories));
   const [salesOrders, setSalesOrders] = useState<SalesOrder[]>(() => getStored('sales_orders', initialSalesOrders));
   const [invoices, setInvoices] = useState<CustomerInvoice[]>(() => getStored('invoices', initialInvoices));
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(() => getStored('purchase_orders', initialPurchaseOrders));
@@ -104,6 +112,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync to localStorage
   useEffect(() => { localStorage.setItem('urban_furniture_contacts', JSON.stringify(contacts)); }, [contacts]);
   useEffect(() => { localStorage.setItem('urban_furniture_products', JSON.stringify(products)); }, [products]);
+  useEffect(() => { localStorage.setItem('urban_furniture_categories', JSON.stringify(categories)); }, [categories]);
   useEffect(() => { localStorage.setItem('urban_furniture_sales_orders', JSON.stringify(salesOrders)); }, [salesOrders]);
   useEffect(() => { localStorage.setItem('urban_furniture_invoices', JSON.stringify(invoices)); }, [invoices]);
   useEffect(() => { localStorage.setItem('urban_furniture_purchase_orders', JSON.stringify(purchaseOrders)); }, [purchaseOrders]);
@@ -115,33 +124,204 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => { localStorage.setItem('urban_furniture_analytic_accounts', JSON.stringify(analyticAccounts)); }, [analyticAccounts]);
   useEffect(() => { localStorage.setItem('urban_furniture_budgets', JSON.stringify(budgets)); }, [budgets]);
 
+  const fetchFromBackend = async () => {
+    try {
+      // 1. Fetch contacts from MongoDB Atlas
+      const contactRes = await api.getContacts();
+      if (contactRes && contactRes.contacts && Array.isArray(contactRes.contacts) && contactRes.contacts.length > 0) {
+        const mappedContacts: Contact[] = contactRes.contacts.map((doc: any) => ({
+          id: String(doc._id || doc.id),
+          name: doc.name || '',
+          type: doc.type || 'customer',
+          email: doc.email || '',
+          phone: doc.phone || '',
+          street: doc.street || '',
+          city: doc.city || '',
+          state: doc.state || '',
+          country: doc.country || 'India',
+          pincode: doc.pincode || '',
+          image: doc.image || '',
+          address: doc.address || [doc.street, doc.city, doc.state, doc.pincode, doc.country].filter(Boolean).join(', '),
+          taxId: doc.taxId || '',
+          totalInvoiced: doc.totalInvoiced || 0,
+          totalPaid: doc.totalPaid || 0,
+          outstanding: doc.outstanding || 0,
+          status: doc.status || 'active',
+        }));
+        setContacts(mappedContacts);
+      }
+
+      // 2. Fetch products from MongoDB Atlas
+      const productRes = await api.getProducts();
+      if (productRes && productRes.products && Array.isArray(productRes.products) && productRes.products.length > 0) {
+        const mappedProducts: Product[] = productRes.products.map((doc: any) => ({
+          id: String(doc._id || doc.id),
+          name: doc.name || '',
+          sku: doc.sku || '',
+          type: doc.type || 'goods',
+          category: doc.category || 'Furniture',
+          salesPrice: doc.salesPrice || 0,
+          purchasePrice: doc.purchasePrice || 0,
+          stock: doc.stock ?? 10,
+          status: doc.status || 'active',
+          description: doc.description || '',
+          image: doc.image || '',
+        }));
+        setProducts(mappedProducts);
+
+        // Derive categories
+        const distinctCats = Array.from(new Set([
+          ...initialCategories,
+          ...mappedProducts.map(p => p.category).filter(Boolean)
+        ]));
+        setCategories(distinctCats);
+      }
+
+      // 3. Fetch categories from Atlas if available
+      try {
+        const catRes = await api.getCategories();
+        if (catRes && catRes.categories && Array.isArray(catRes.categories)) {
+          setCategories(prev => Array.from(new Set([...prev, ...catRes.categories])));
+        }
+      } catch {
+        // silent
+      }
+
+      // 4. Fetch accounts from MongoDB Atlas
+      try {
+        const accRes = await api.getAccounts();
+        if (accRes && accRes.accounts && Array.isArray(accRes.accounts) && accRes.accounts.length > 0) {
+          const mappedAccounts: Account[] = accRes.accounts.map((doc: any) => ({
+            id: String(doc._id || doc.id),
+            code: doc.code || '',
+            name: doc.name || '',
+            type: doc.type || 'asset',
+            balance: doc.balance || 0,
+            status: doc.status || 'active',
+            parentAccountId: doc.parentAccountId ? String(doc.parentAccountId) : undefined,
+            parentAccountName: doc.parentAccountName,
+          }));
+          setAccounts(mappedAccounts);
+        }
+      } catch (e) {
+        console.warn('[DataContext] Error fetching accounts from Atlas:', e);
+      }
+    } catch (err) {
+      console.warn('[DataContext] MongoDB Atlas sync error:', err);
+    }
+  };
+
+  // Sync with MongoDB Atlas on mount, window focus, and background polling every 6 seconds
+  useEffect(() => {
+    fetchFromBackend();
+
+    const handleFocus = () => {
+      fetchFromBackend();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    const interval = setInterval(() => {
+      fetchFromBackend();
+    }, 6000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const addCategory = (categoryName: string) => {
+    const trimmed = categoryName.trim();
+    if (!trimmed) return '';
+    if (!categories.includes(trimmed)) {
+      setCategories(prev => [...prev, trimmed]);
+    }
+    return trimmed;
+  };
+
   const addContact = (contactData: Omit<Contact, 'id' | 'totalInvoiced' | 'totalPaid' | 'outstanding'>) => {
+    const computedAddress = contactData.address || [
+      contactData.street,
+      contactData.city,
+      contactData.state,
+      contactData.pincode,
+      contactData.country
+    ].filter(Boolean).join(', ');
+
+    const tempId = `cnt-${Date.now()}`;
     const newContact: Contact = {
       ...contactData,
-      id: `cnt-${Date.now()}`,
+      address: computedAddress,
+      id: tempId,
       totalInvoiced: 0,
       totalPaid: 0,
       outstanding: 0,
     };
     setContacts(prev => [newContact, ...prev]);
+
+    // Save directly into MongoDB Atlas cloud database
+    api.createContact({
+      ...contactData,
+      address: computedAddress,
+    }).then(res => {
+      if (res && res.contact && res.contact._id) {
+        const realId = String(res.contact._id);
+        setContacts(prev => prev.map(c => c.id === tempId ? { ...c, id: realId } : c));
+      }
+    }).catch(err => {
+      console.warn('[Atlas Save Error] Could not save contact to Atlas:', err);
+    });
+
     return newContact;
   };
 
   const updateContact = (id: string, updates: Partial<Contact>) => {
-    setContacts(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    setContacts(prev => prev.map(c => {
+      if (c.id === id) {
+        const merged = { ...c, ...updates };
+        if (!updates.address && (updates.street || updates.city || updates.state || updates.pincode)) {
+          merged.address = [merged.street, merged.city, merged.state, merged.pincode, merged.country].filter(Boolean).join(', ');
+        }
+        return merged;
+      }
+      return c;
+    }));
+
+    // Update in MongoDB Atlas
+    api.updateContact(id, updates).catch(err => {
+      console.warn('[Atlas Update Error] Could not update contact in Atlas:', err);
+    });
   };
 
   const addProduct = (productData: Omit<Product, 'id'>) => {
+    const tempId = `prd-${Date.now()}`;
     const newProduct: Product = {
       ...productData,
-      id: `prd-${Date.now()}`,
+      sku: productData.sku || `FURN-PRD-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: tempId,
     };
     setProducts(prev => [newProduct, ...prev]);
+
+    // Save directly into MongoDB Atlas cloud database
+    api.createProduct(newProduct).then(res => {
+      if (res && res.product && res.product._id) {
+        const realId = String(res.product._id);
+        setProducts(prev => prev.map(p => p.id === tempId ? { ...p, id: realId } : p));
+      }
+    }).catch(err => {
+      console.warn('[Atlas Save Error] Could not save product to Atlas:', err);
+    });
+
     return newProduct;
   };
 
   const updateProduct = (id: string, updates: Partial<Product>) => {
     setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+
+    // Update in MongoDB Atlas
+    api.updateProduct(id, updates).catch(err => {
+      console.warn('[Atlas Update Error] Could not update product in Atlas:', err);
+    });
   };
 
   const createSalesOrder = (soData: Omit<SalesOrder, 'id' | 'orderNumber' | 'subtotal' | 'taxTotal' | 'grandTotal' | 'status'> & { items: LineItem[] }) => {
@@ -490,13 +670,59 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addAccount = (accData: Omit<Account, 'id' | 'balance'>) => {
+    const tempId = `acc-${Date.now()}`;
     const newAccount: Account = {
       ...accData,
-      id: `acc-${accData.code}`,
+      id: tempId,
       balance: 0,
+      status: accData.status || 'active',
     };
-    setAccounts(prev => [...prev, newAccount]);
+    setAccounts(prev => [newAccount, ...prev]);
+
+    // Asynchronously persist to MongoDB Atlas
+    api.createAccount(accData)
+      .then(res => {
+        if (res && res.account) {
+          const saved: Account = {
+            id: String(res.account._id || res.account.id),
+            code: res.account.code,
+            name: res.account.name,
+            type: res.account.type,
+            balance: res.account.balance || 0,
+            status: res.account.status || 'active',
+          };
+          setAccounts(prev => prev.map(a => a.id === tempId ? saved : a));
+        }
+      })
+      .catch(err => {
+        console.error('Failed to save account to MongoDB Atlas:', err);
+      });
+
     return newAccount;
+  };
+
+  const updateAccount = (id: string, updates: Partial<Account>) => {
+    setAccounts(prev => prev.map(a => (a.id === id ? { ...a, ...updates } : a)));
+
+    api.updateAccount(id, updates).catch(err => {
+      console.error('Failed to update account in MongoDB Atlas:', err);
+    });
+  };
+
+  const archiveAccount = (id: string) => {
+    setAccounts(prev =>
+      prev.map(a => {
+        if (a.id === id) {
+          const nextStatus = a.status === 'archived' ? 'active' : 'archived';
+          return { ...a, status: nextStatus };
+        }
+        return a;
+      })
+    );
+
+    api.archiveAccount(id).catch(err => {
+      console.error('Failed to archive account in MongoDB Atlas:', err);
+    });
   };
 
   const addJournal = (jrnData: Omit<Journal, 'id'>) => {
@@ -562,6 +788,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setJournalEntries(initialJournalEntries);
     setAnalyticAccounts(initialAnalyticAccounts);
     setBudgets(initialBudgets);
+    setCategories(initialCategories);
   };
 
   return (
@@ -569,6 +796,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         contacts,
         products,
+        categories,
         salesOrders,
         invoices,
         purchaseOrders,
@@ -583,6 +811,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateContact,
         addProduct,
         updateProduct,
+        addCategory,
         createSalesOrder,
         updateSalesOrderStatus,
         convertSOToInvoice,
@@ -592,11 +821,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createVendorBill,
         recordPayment,
         addAccount,
+        updateAccount,
+        archiveAccount,
         addJournal,
         addJournalEntry,
         addAnalyticAccount,
         addBudget,
         resetDemoData,
+        refreshData: fetchFromBackend,
       }}
     >
       {children}

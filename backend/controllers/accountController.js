@@ -21,6 +21,10 @@ export const getAccounts = async (req, res, next) => {
 // @access  Protected (ADMIN, ACCOUNTANT)
 export const createAccount = async (req, res, next) => {
   try {
+    if (!req.body.code) {
+      const count = await Account.countDocuments();
+      req.body.code = String(6000 + count + 1);
+    }
     const account = await Account.create(req.body);
     res.status(201).json({ success: true, account });
   } catch (error) {
@@ -33,13 +37,6 @@ export const createAccount = async (req, res, next) => {
 // @access  Protected (ADMIN, ACCOUNTANT)
 export const updateAccount = async (req, res, next) => {
   try {
-    if (req.body.status === 'archived' && req.user.role !== 'ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only Administrators have permission to archive accounts',
-      });
-    }
-
     const account = await Account.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
@@ -55,16 +52,9 @@ export const updateAccount = async (req, res, next) => {
 
 // @desc    Archive account
 // @route   PATCH /api/accounts/:id/archive
-// @access  Protected (ADMIN only)
+// @access  Protected (ADMIN, ACCOUNTANT)
 export const archiveAccount = async (req, res, next) => {
   try {
-    if (req.user.role !== 'ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only Administrators have permission to archive accounts',
-      });
-    }
-
     const account = await Account.findById(req.params.id);
     if (!account) {
       return res.status(404).json({ success: false, message: 'Account not found' });

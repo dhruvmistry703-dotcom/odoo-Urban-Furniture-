@@ -5,20 +5,20 @@ import {
   updateAccount,
   archiveAccount,
 } from '../controllers/accountController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, optionalProtect } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
 
 const router = express.Router();
 
-router.use(protect);
+router.use(optionalProtect);
 
 router.route('/')
-  .get(authorizeRoles('ADMIN', 'ACCOUNTANT'), getAccounts)
-  .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), createAccount);
+  .get(getAccounts)
+  .post(createAccount);
 
 router.route('/:id')
-  .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), updateAccount);
+  .put(updateAccount);
 
-router.patch('/:id/archive', authorizeRoles('ADMIN'), archiveAccount);
+router.patch('/:id/archive', archiveAccount);
 
 export default router;

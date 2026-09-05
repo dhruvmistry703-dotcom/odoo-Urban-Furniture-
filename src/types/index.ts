@@ -7,8 +7,14 @@ export interface Contact {
   type: ContactType;
   email: string;
   phone: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pincode?: string;
+  image?: string;
   address: string;
-  taxId: string;
+  taxId?: string;
   totalInvoiced: number;
   totalPaid: number;
   outstanding: number;
@@ -29,6 +35,7 @@ export interface Product {
   stock: number;
   status: ProductStatus;
   description?: string;
+  image?: string;
 }
 
 export interface LineItem {
@@ -142,12 +149,30 @@ export interface Payment {
   status: PaymentStatus;
 }
 
-export type AccountType = 'asset' | 'liability' | 'income' | 'expense' | 'capital';
-export type AccountStatus = 'active' | 'inactive';
+export type AccountType =
+  | 'asset'
+  | 'liability'
+  | 'income'
+  | 'expense'
+  | 'capital'
+  | 'Asset'
+  | 'Assets'
+  | 'Liability'
+  | 'Liabilities'
+  | 'Bank'
+  | 'Capital'
+  | 'Cash'
+  | 'Income'
+  | 'Expenses'
+  | 'Expense'
+  | 'Other Expenses'
+  | string;
+
+export type AccountStatus = 'active' | 'inactive' | 'archived';
 
 export interface Account {
   id: string;
-  code: string;
+  code?: string;
   name: string;
   type: AccountType;
   parentAccountId?: string;

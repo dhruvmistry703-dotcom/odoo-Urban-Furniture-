@@ -59,6 +59,12 @@ export const createContact = async (req, res, next) => {
       email,
       phone,
       address,
+      street,
+      city,
+      state,
+      country,
+      pincode,
+      image,
       taxId,
       createLoginAccount,
       password,
@@ -71,12 +77,20 @@ export const createContact = async (req, res, next) => {
       });
     }
 
+    const computedAddress = address || [street, city, state, pincode, country].filter(Boolean).join(', ');
+
     const contact = await Contact.create({
       name,
       type: type || 'customer',
       email: email || '',
       phone: phone || '',
-      address: address || '',
+      address: computedAddress,
+      street: street || '',
+      city: city || '',
+      state: state || '',
+      country: country || 'India',
+      pincode: pincode || '',
+      image: image || '',
       taxId: taxId || '',
       status: 'active',
       totalInvoiced: 0,
