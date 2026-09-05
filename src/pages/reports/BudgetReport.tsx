@@ -1,5 +1,3 @@
-import React, { useEffect, useState } from 'react';
-import { Download, Target } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -10,15 +8,8 @@ import {
   LayoutGrid,
   RefreshCw,
   Target,
-  Calendar,
-  Layers,
-  CheckCircle2,
-  DollarSign,
-  PieChart as PieChartIcon,
 } from 'lucide-react';
-import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
-import { api } from '../../services/api';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
@@ -30,7 +21,7 @@ import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import { Budget, AnalyticAccount, BudgetStatus } from '../../types';
 
-// Mini Pie Chart component that renders two slices: Achieved (Cyan/Blue) and Balance (Coral/Red)
+// Mini Pie Chart component: Achieved (Cyan) vs Balance (Coral)
 interface MiniPieChartProps {
   achieved: number;
   planned: number;
@@ -53,11 +44,9 @@ export const MiniBudgetPieChart: React.FC<MiniPieChartProps> = ({
   const achievedPct = safePlanned > 0 ? Math.min(100, (safeAchieved / safePlanned) * 100) : 0;
   const balancePct = Math.max(0, 100 - achievedPct);
 
-  // SVG coordinate calculations for circular sector
   const radius = 16;
   const center = 20;
 
-  // Compute end angle for achieved slice (starting from -90 deg / 12 o'clock)
   const angle = (achievedPct / 100) * 360;
   const radians = ((angle - 90) * Math.PI) / 180;
   const startRadians = (-90 * Math.PI) / 180;
@@ -69,7 +58,6 @@ export const MiniBudgetPieChart: React.FC<MiniPieChartProps> = ({
 
   const largeArcFlag = achievedPct > 50 ? 1 : 0;
 
-  // Path for Achieved slice (Cyan/Sky)
   const achievedPath =
     achievedPct >= 100
       ? `M ${center},${center - radius} A ${radius},${radius} 0 1,1 ${center - 0.001},${center - radius} Z`
@@ -77,7 +65,6 @@ export const MiniBudgetPieChart: React.FC<MiniPieChartProps> = ({
       ? ''
       : `M ${center},${center} L ${startX},${startY} A ${radius},${radius} 0 ${largeArcFlag},1 ${endX},${endY} Z`;
 
-  // Path for Balance slice (Coral/Red)
   const balancePath =
     achievedPct <= 0
       ? `M ${center},${center - radius} A ${radius},${radius} 0 1,1 ${center - 0.001},${center - radius} Z`
@@ -98,29 +85,11 @@ export const MiniBudgetPieChart: React.FC<MiniPieChartProps> = ({
           height={size}
           className="transform -rotate-90 drop-shadow-xs transition-transform duration-200 group-hover:scale-110"
         >
-          {/* Background circle / Balance Slice */}
-          {balancePath ? (
-            <path
-              d={balancePath}
-              fill="#f43f5e"
-              className="transition-all duration-300 hover:brightness-110"
-            />
-          ) : null}
-
-          {/* Achieved Slice */}
-          {achievedPath ? (
-            <path
-              d={achievedPath}
-              fill="#06b6d4"
-              className="transition-all duration-300 hover:brightness-110"
-            />
-          ) : null}
-
-          {/* Inner separator lines */}
+          {balancePath && <path d={balancePath} fill="#f43f5e" />}
+          {achievedPath && <path d={achievedPath} fill="#06b6d4" />}
           <circle cx={center} cy={center} r={radius} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
         </svg>
 
-        {/* Hover Tooltip Popup */}
         {isHovered && (
           <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 p-2.5 bg-slate-900/95 text-white text-[11px] rounded-lg shadow-xl border border-slate-700 whitespace-nowrap pointer-events-none backdrop-blur-xs min-w-[150px]">
             <div className="font-bold text-slate-300 border-b border-slate-700/60 pb-1 mb-1.5 flex items-center justify-between gap-2">
@@ -145,7 +114,6 @@ export const MiniBudgetPieChart: React.FC<MiniPieChartProps> = ({
                 ₹{balance.toLocaleString('en-IN')} ({balancePct.toFixed(1)}%)
               </span>
             </div>
-            {/* Arrow */}
             <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900" />
           </div>
         )}
@@ -172,7 +140,6 @@ export const BudgetReport: React.FC = () => {
   const { user } = useAuth();
   const { budgets: contextBudgets, analyticAccounts: contextAnalytics } = useData();
   const { showToast } = useToast();
-  const [reportItems, setReportItems] = useState<any[]>([]);
 
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticAccount[]>([]);
@@ -180,7 +147,7 @@ export const BudgetReport: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
-  // Create Budget Modal State
+  // Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState('');
   const [anaId, setAnaId] = useState('');
@@ -192,7 +159,6 @@ export const BudgetReport: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Helper date formatter: DD/MM/YYYY matching diagram (e.g. 01/01/2026)
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '—';
     try {
@@ -339,7 +305,6 @@ export const BudgetReport: React.FC = () => {
     }
   };
 
-  // Filter budgets by search query
   const filteredBudgets = budgets.filter(b => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
@@ -353,7 +318,7 @@ export const BudgetReport: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Top Header Toolbar exactly matching diagram: New | Search | Back | [List View][Kanban View] */}
+      {/* Top Header Toolbar */}
       <div className="p-4 bg-white dark:bg-navy-800 rounded-2xl border border-slate-200 dark:border-navy-700 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
         {/* Left: New Button */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -389,7 +354,7 @@ export const BudgetReport: React.FC = () => {
           />
         </div>
 
-        {/* Right: Back Button & View Switcher (List View / Kanban View) */}
+        {/* Right: Back Button & View Switcher */}
         <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
           <Button
             variant="outline"
@@ -400,7 +365,6 @@ export const BudgetReport: React.FC = () => {
             Back
           </Button>
 
-          {/* View Switcher Icons matching diagram */}
           <div className="flex items-center p-1 bg-slate-100 dark:bg-navy-900 rounded-xl border border-slate-200 dark:border-navy-700">
             <button
               onClick={() => setViewMode('list')}
@@ -428,7 +392,7 @@ export const BudgetReport: React.FC = () => {
         </div>
       </div>
 
-      {/* View Title & Breadcrumb Indicator */}
+      {/* View Title & Legend */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -440,7 +404,6 @@ export const BudgetReport: React.FC = () => {
           </p>
         </div>
 
-        {/* Mini Legend */}
         <div className="hidden md:flex items-center gap-4 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-navy-800 border border-slate-200 dark:border-navy-700">
           <span className="text-slate-400 text-[11px] uppercase tracking-wider">Pie Chart:</span>
           <span className="flex items-center gap-1.5 text-cyan-500">
@@ -452,7 +415,7 @@ export const BudgetReport: React.FC = () => {
         </div>
       </div>
 
-      {/* -------------------- 1. LIST VIEW -------------------- */}
+      {/* 1. LIST VIEW */}
       {viewMode === 'list' && (
         <Card noPadding className="overflow-hidden shadow-xs border border-slate-200 dark:border-navy-700">
           <div className="w-full min-w-0 overflow-x-auto">
@@ -482,9 +445,6 @@ export const BudgetReport: React.FC = () => {
                       <div className="flex flex-col items-center gap-2">
                         <Target className="w-8 h-8 text-slate-400" />
                         <p className="font-semibold text-slate-700 dark:text-slate-300">No budgets found</p>
-                        <p className="text-xs text-slate-400">
-                          {searchQuery ? 'Try adjusting your search criteria.' : 'Create a new budget to view reports.'}
-                        </p>
                         <Button
                           variant="primary"
                           size="sm"
@@ -510,7 +470,6 @@ export const BudgetReport: React.FC = () => {
                         className="hover:bg-emerald-50/40 dark:hover:bg-navy-700/50 transition-colors cursor-pointer group"
                         title="Click to Open Form View"
                       >
-                        {/* 1. Budget Column */}
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-105 transition-transform">
@@ -528,23 +487,15 @@ export const BudgetReport: React.FC = () => {
                             </div>
                           </div>
                         </td>
-
-                        {/* 2. Start Date Column */}
                         <td className="px-5 py-4 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
                           {formatDate(b.startDate)}
                         </td>
-
-                        {/* 3. End Date Column */}
                         <td className="px-5 py-4 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
                           {formatDate(b.endDate)}
                         </td>
-
-                        {/* 4. Status Column */}
                         <td className="px-5 py-4 text-center whitespace-nowrap">
                           {getStatusBadge(b.status)}
                         </td>
-
-                        {/* 5. Pie Chart Column (Achieved vs Balance) */}
                         <td className="px-5 py-4 text-center whitespace-nowrap" onClick={e => e.stopPropagation()}>
                           <div className="inline-flex items-center justify-center">
                             <MiniBudgetPieChart
@@ -564,7 +515,7 @@ export const BudgetReport: React.FC = () => {
         </Card>
       )}
 
-      {/* -------------------- 2. KANBAN VIEW -------------------- */}
+      {/* 2. KANBAN VIEW */}
       {viewMode === 'kanban' && (
         <div className="space-y-4">
           {loading ? (
@@ -576,9 +527,6 @@ export const BudgetReport: React.FC = () => {
             <Card className="py-16 text-center text-slate-400">
               <Target className="w-10 h-10 mx-auto text-slate-400 mb-2" />
               <p className="font-semibold text-slate-700 dark:text-slate-300">No budgets found</p>
-              <p className="text-xs text-slate-400 mt-1">
-                {searchQuery ? 'Try adjusting your search query.' : 'Create a budget to get started.'}
-              </p>
               <Button
                 variant="primary"
                 size="sm"
@@ -605,7 +553,6 @@ export const BudgetReport: React.FC = () => {
                     className="group bg-white dark:bg-navy-800 rounded-2xl border border-slate-200 dark:border-navy-700 p-5 shadow-xs hover:shadow-md hover:border-emerald-500/50 dark:hover:border-emerald-500/50 transition-all cursor-pointer relative overflow-hidden"
                     title="Click to Open Form View"
                   >
-                    {/* Top Header of Kanban Card */}
                     <div className="flex items-start justify-between gap-3 mb-4">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -623,7 +570,6 @@ export const BudgetReport: React.FC = () => {
                       {getStatusBadge(b.status)}
                     </div>
 
-                    {/* Card Content Matching Diagram (Start Date, End Date) */}
                     <div className="bg-slate-50 dark:bg-navy-900/70 rounded-xl p-3.5 border border-slate-100 dark:border-navy-700/60 space-y-2 mb-4 text-xs font-mono">
                       <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
                         <span className="text-slate-400 font-sans text-[11px] font-semibold">Start Date:</span>
@@ -635,7 +581,6 @@ export const BudgetReport: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Financial Distribution & Mini Pie Chart in Card */}
                     <div className="pt-2 border-t border-slate-100 dark:border-navy-700/80 flex items-center justify-between">
                       <div className="space-y-1 text-xs">
                         <div className="flex items-center gap-2">
@@ -654,7 +599,6 @@ export const BudgetReport: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Mini Pie Chart */}
                       <div onClick={e => e.stopPropagation()} className="shrink-0">
                         <MiniBudgetPieChart
                           achieved={achievedAmount}
@@ -664,7 +608,6 @@ export const BudgetReport: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Hover indicator link */}
                     <div className="mt-3 pt-2 text-right">
                       <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 group-hover:underline inline-flex items-center gap-1">
                         Open Form View &rarr;
@@ -678,7 +621,7 @@ export const BudgetReport: React.FC = () => {
         </div>
       )}
 
-      {/* -------------------- CREATE BUDGET MODAL -------------------- */}
+      {/* CREATE BUDGET MODAL */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Budget">
         <form onSubmit={handleCreate} className="space-y-4">
           <Input

@@ -13,7 +13,7 @@ import { api } from '../../services/api';
 export const InvoiceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { invoices: localInvoices, payments, contacts } = useData();
+  const { invoices: localInvoices, payments, contacts, salesOrders = [] } = useData();
   const { showToast } = useToast();
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +41,7 @@ export const InvoiceDetail: React.FC = () => {
   const invoiceId = invoice._id || invoice.id;
   const customerId = invoice.customerId?._id || invoice.customerId?.id || invoice.customerId;
   const relatedPayments = payments.filter(p => p.referenceId === invoiceId || p.referenceNumber === invoice.invoiceNumber);
+  const linkedSO = invoice.salesOrderId ? salesOrders.find(so => ((so as any)._id || so.id) === ((invoice.salesOrderId as any)?._id || invoice.salesOrderId?.id || invoice.salesOrderId)) : null;
 
   const steps: StepItem[] = [
     { label: 'Sales Order', isDone: !!linkedSO, refCode: linkedSO ? linkedSO.orderNumber : 'Direct Invoice' },
