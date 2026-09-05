@@ -1,22 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Download, Target } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { useData } from '../../context/DataContext';
+import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
 export const BudgetReport: React.FC = () => {
-  const { budgets, bills } = useData();
   const { showToast } = useToast();
+  const [reportItems, setReportItems] = useState<any[]>([]);
 
-  const reportItems = [
-    { category: 'Showroom & Workshop Rent', budget: 50000, actual: 45000, variance: 5000 },
-    { category: 'Factory & Office Salary', budget: 130000, actual: 125000, variance: 5000 },
-    { category: 'Raw Materials & Timber Purchases', budget: 650000, actual: 620000, variance: 30000 },
-    { category: 'Logistics & Freight Overhead', budget: 80000, actual: 70000, variance: 10000 },
-  ];
+  useEffect(() => {
+    api.getBudgetReport()
+      .then(response => setReportItems(response.report.budgets.map((budget: any) => ({
+        category: budget.analyticAccountName || budget.analyticAccountId?.name || budget.name,
+        budget: budget.planned || 0,
+        actual: budget.actual || 0,
+        variance: (budget.planned || 0) - (budget.actual || 0),
+      }))))
+      .catch(error => showToast({ type: 'error', title: 'Unable to load Budget Report', message: error.message }));
+  }, [showToast]);
 
   const handleExportPDF = () => {
     showToast({

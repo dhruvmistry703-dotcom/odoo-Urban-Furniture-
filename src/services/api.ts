@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 export interface ApiError {
   message: string;
@@ -154,7 +154,10 @@ export const api = {
   createBudget: (data: any) => request('/budgets', { method: 'POST', body: JSON.stringify(data) }),
 
   // Reports
-  getProfitLoss: () => request('/reports/profit-loss'),
+  getProfitLoss: (params?: { from?: string; to?: string }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return request(`/reports/profit-loss${query ? `?${query}` : ''}`);
+  },
   getBalanceSheet: () => request('/reports/balance-sheet'),
   getBudgetReport: () => request('/reports/budget'),
   getLedger: () => request('/reports/ledger'),
