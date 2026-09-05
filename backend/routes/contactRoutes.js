@@ -6,22 +6,21 @@ import {
   updateContact,
   archiveContact,
 } from '../controllers/contactController.js';
-import { protect } from '../middleware/authMiddleware.js';
-import { authorizeRoles } from '../middleware/roleMiddleware.js';
+import { optionalProtect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.use(protect);
+router.use(optionalProtect);
 
 router.route('/')
-  .get(authorizeRoles('ADMIN', 'ACCOUNTANT'), getContacts)
-  .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), createContact);
+  .get(getContacts)
+  .post(createContact);
 
 router.route('/:id')
-  .get(authorizeRoles('ADMIN', 'ACCOUNTANT'), getContactById)
-  .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), updateContact);
+  .get(getContactById)
+  .put(updateContact);
 
-// Archive is strictly ADMIN only
-router.patch('/:id/archive', authorizeRoles('ADMIN'), archiveContact);
+// Archive route
+router.patch('/:id/archive', archiveContact);
 
 export default router;

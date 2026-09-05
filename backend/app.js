@@ -25,10 +25,10 @@ dotenv.config();
 
 const app = express();
 
-// Enable CORS with credentials
+// Enable CORS with credentials for all origins (local and LAN network computers)
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'],
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
