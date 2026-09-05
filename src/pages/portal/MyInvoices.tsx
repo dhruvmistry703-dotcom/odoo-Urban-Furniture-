@@ -31,8 +31,9 @@ export const MyInvoices: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.getInvoices();
-      if (res && res.invoices && res.invoices.length > 0) {
+      if (res && res.invoices && Array.isArray(res.invoices)) {
         setInvoices(res.invoices);
+        setLoading(false);
         return;
       }
     } catch (err) {
@@ -41,12 +42,21 @@ export const MyInvoices: React.FC = () => {
 
     // Fallback to dataContext filtered for this contact
     const targetContactId = user?.contactId || 'cnt-1';
-    const filtered = contextInvoices.filter(
-      i => i.customerId === targetContactId || i.customerName?.toLowerCase().includes('royal oak')
-    );
+    const userName = user?.name?.toLowerCase() || '';
+    const userEmail = user?.email?.toLowerCase() || '';
+
+    const filtered = contextInvoices.filter(i => {
+      const invCustomerId = typeof i.customerId === 'object' ? (i.customerId as any)?._id : i.customerId;
+      const matchesId = invCustomerId === targetContactId;
+      const matchesName = userName && i.customerName?.toLowerCase().includes(userName);
+      const matchesEmail = userEmail && (i as any).customerEmail?.toLowerCase() === userEmail;
+      const isDemoCustomer = i.customerName?.toLowerCase().includes('royal oak');
+      return matchesId || matchesName || matchesEmail || isDemoCustomer;
+    });
+
     setInvoices(filtered);
     setLoading(false);
-  }, [user?.contactId, contextInvoices]);
+  }, [user?.contactId, user?.name, user?.email, contextInvoices]);
 
   useEffect(() => {
     fetchInvoices();
@@ -149,7 +159,7 @@ export const MyInvoices: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <Shield className="w-5 h-5 text-amber-400 shrink-0" />
           <span>
-            <strong>Client Portal Data Isolation:</strong> Authenticated as <strong>{user?.name}</strong>. Strictly displaying only invoices issued to your client account.
+            <strong>Client Portal Data Isolation:</strong> Authenticated as <strong>{user?.name}</strong> ({user?.email}). Displaying invoices issued to your client account.
           </span>
         </div>
       </div>

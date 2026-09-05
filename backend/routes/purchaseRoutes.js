@@ -4,6 +4,8 @@ import {
   getPurchaseOrderById,
   createPurchaseOrder,
   updatePurchaseOrder,
+  confirmPurchaseOrder,
+  cancelPurchaseOrder,
 } from '../controllers/purchaseController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -20,5 +22,8 @@ router.route('/')
 router.route('/:id')
   .get(getPurchaseOrderById)
   .put(updatePurchaseOrder);
+
+router.post('/:id/confirm', confirmPurchaseOrder);
+router.post('/:id/cancel', cancelPurchaseOrder);
 
 export default router;

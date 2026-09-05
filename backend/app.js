@@ -28,7 +28,10 @@ const app = express();
 // Enable CORS with credentials for all origins (local and LAN network computers)
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow all origins (localhost, 127.0.0.1, LAN IP, postman/curl)
+      callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

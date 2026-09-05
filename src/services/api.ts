@@ -155,13 +155,39 @@ export const api = {
   createPurchaseOrder: (data: any) => request('/purchases', { method: 'POST', body: JSON.stringify(data) }),
 
   // Analytics & Budgets
-  getAnalytics: () => request('/analytics'),
+  getAnalytics: (params?: { status?: string; type?: string }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return request(`/analytics${query ? `?${query}` : ''}`);
+  },
+  getAnalyticById: (id: string) => request(`/analytics/${id}`),
+  getAnalyticBudgets: (id: string) => request(`/analytics/${id}/budgets`),
   createAnalytics: (data: any) => request('/analytics', { method: 'POST', body: JSON.stringify(data) }),
-  getBudgets: () => request('/budgets'),
+  updateAnalytic: (id: string, updates: any) =>
+    request(`/analytics/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+  archiveAnalytic: (id: string) => request(`/analytics/${id}/archive`, { method: 'PATCH' }),
+  deleteAnalytic: (id: string) => request(`/analytics/${id}`, { method: 'DELETE' }),
+
+  getBudgets: (params?: { status?: string; analyticAccountId?: string; search?: string }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return request(`/budgets${query ? `?${query}` : ''}`);
+  },
+  getBudgetById: (id: string) => request(`/budgets/${id}`),
+  getBudgetTransactions: (id: string) => request(`/budgets/${id}/transactions`),
   createBudget: (data: any) => request('/budgets', { method: 'POST', body: JSON.stringify(data) }),
+  updateBudget: (id: string, updates: any) =>
+    request(`/budgets/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+  confirmBudget: (id: string) => request(`/budgets/${id}/confirm`, { method: 'PATCH' }),
+  reviseBudget: (id: string, data: { planned: number; notes?: string; newName?: string }) =>
+    request(`/budgets/${id}/revise`, { method: 'POST', body: JSON.stringify(data) }),
+  cancelBudget: (id: string) => request(`/budgets/${id}/cancel`, { method: 'PATCH' }),
+  archiveBudget: (id: string) => request(`/budgets/${id}/archive`, { method: 'PATCH' }),
+  deleteBudget: (id: string) => request(`/budgets/${id}`, { method: 'DELETE' }),
 
   // Reports
-  getProfitLoss: () => request('/reports/profit-loss'),
+  getProfitLoss: (params?: { from?: string; to?: string }) => {
+    const query = new URLSearchParams(params as any).toString();
+    return request(`/reports/profit-loss${query ? `?${query}` : ''}`);
+  },
   getBalanceSheet: () => request('/reports/balance-sheet'),
   getBudgetReport: () => request('/reports/budget'),
   getLedger: () => request('/reports/ledger'),

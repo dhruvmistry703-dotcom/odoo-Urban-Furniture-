@@ -1,32 +1,38 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Download, Scale } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { useData } from '../../context/DataContext';
+import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 export const BalanceSheetReport: React.FC = () => {
-  const { accounts, invoices, bills } = useData();
   const { showToast } = useToast();
+  const [report, setReport] = useState<any>(null);
 
-  const cash = accounts.find(a => a.code === '1001')?.balance || 45000;
-  const bank = accounts.find(a => a.code === '1002')?.balance || 840000;
-  const ar = accounts.find(a => a.code === '1003')?.balance || 235000;
-  const inventory = accounts.find(a => a.code === '1004')?.balance || 1450000;
+  useEffect(() => {
+    api.getBalanceSheet()
+      .then(response => setReport(response.report))
+      .catch(error => showToast({ type: 'error', title: 'Unable to load Balance Sheet', message: error.message }));
+  }, [showToast]);
+
+  if (!report) return <div className="p-8 text-sm text-slate-500">Loading balance sheet from MongoDB...</div>;
+
+  const cash = report.assetAccounts.find((a: any) => a.code === '1001')?.balance || 0;
+  const bank = report.assetAccounts.find((a: any) => a.code === '1002')?.balance || 0;
+  const ar = report.accountsReceivable;
+  const inventory = report.assetAccounts.find((a: any) => a.code === '1004')?.balance || 0;
   const fixedAssets = 850000; // Machinery & Showroom Fixtures
 
   const totalCurrentAssets = cash + bank + ar + inventory;
   const totalAssets = totalCurrentAssets + fixedAssets;
 
-  const ap = accounts.find(a => a.code === '2001')?.balance || 165000;
-  const gstPayable = accounts.find(a => a.code === '2002')?.balance || 79980;
+  const ap = report.accountsPayable;
+  const gstPayable = report.liabilityAccounts.find((a: any) => a.code === '2002')?.balance || 0;
   const totalLiabilities = ap + gstPayable;
 
-  const capital = accounts.find(a => a.code === '3001')?.balance || 2500000;
-  const salesRev = invoices.reduce((s, i) => s + i.subtotal, 0);
-  const purchExp = bills.reduce((s, b) => s + b.subtotal, 0);
-  const netProfit = salesRev + 25000 - (purchExp + 125000 + 45000 + 70000);
+  const capital = report.totalCapital;
+  const netProfit = report.totalIncome - report.totalExpense;
 
   const totalEquity = capital + netProfit;
   const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;

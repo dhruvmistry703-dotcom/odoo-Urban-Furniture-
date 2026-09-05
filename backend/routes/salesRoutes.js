@@ -4,6 +4,8 @@ import {
   getSalesOrderById,
   createSalesOrder,
   updateSalesOrder,
+  confirmSalesOrder,
+  cancelSalesOrder,
 } from '../controllers/salesController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -20,5 +22,8 @@ router.route('/')
 router.route('/:id')
   .get(getSalesOrderById)
   .put(updateSalesOrder);
+
+router.post('/:id/confirm', confirmSalesOrder);
+router.post('/:id/cancel', cancelSalesOrder);
 
 export default router;

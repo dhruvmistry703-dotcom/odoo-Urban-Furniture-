@@ -5,12 +5,13 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { LifecycleStepper, StepItem } from '../../components/common/LifecycleStepper';
 import { useData } from '../../context/DataContext';
 
 export const VendorBillDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { bills, payments, contacts } = useData();
+  const { bills, payments, contacts, purchaseOrders } = useData();
 
   const bill = bills.find(b => b.id === id);
 
@@ -24,7 +25,24 @@ export const VendorBillDetail: React.FC = () => {
   }
 
   const vendor = contacts.find(c => c.id === bill.vendorId);
+  const linkedPO = purchaseOrders.find(p => p.id === bill.purchaseOrderId || p.billId === bill.id);
   const relatedPayments = payments.filter(p => p.referenceId === bill.id || p.referenceNumber === bill.billNumber);
+
+  const steps: StepItem[] = [
+    { label: 'Purchase Order', isDone: !!linkedPO, refCode: linkedPO ? linkedPO.poNumber : 'Direct Bill' },
+    { label: 'Vendor Bill', isDone: true, refCode: bill.billNumber, isCurrent: bill.outstandingAmount > 0 },
+    {
+      label: 'Payment Register',
+      isDone: bill.status === 'paid' || relatedPayments.length > 0,
+      refCode: relatedPayments.length > 0 ? relatedPayments[0].paymentNumber : undefined,
+      isCurrent: bill.outstandingAmount > 0 && bill.paidAmount > 0,
+    },
+    {
+      label: 'Accounting Entry',
+      isDone: bill.status === 'paid' || relatedPayments.some(p => !!p.journalEntryId),
+      refCode: relatedPayments.find(p => !!p.journalEntryId)?.journalEntryId ? 'JE Posted' : 'JE Posted',
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -49,6 +67,9 @@ export const VendorBillDetail: React.FC = () => {
         }
         breadcrumbs={[{ label: 'Vendor Bills', href: '/vendor-bills' }, { label: bill.billNumber }]}
       />
+
+      {/* Connected Transaction Timeline */}
+      <LifecycleStepper steps={steps} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -144,6 +165,14 @@ export const VendorBillDetail: React.FC = () => {
                 <span className="text-slate-400 block font-medium">Vendor Account:</span>
                 <span className="font-bold text-slate-900 dark:text-white text-sm">{bill.vendorName}</span>
               </div>
+              {linkedPO && (
+                <div>
+                  <span className="text-slate-400 block font-medium">Linked PO Reference:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer hover:underline" onClick={() => navigate(`/purchase-orders/${linkedPO.id}`)}>
+                    {linkedPO.poNumber}
+                  </span>
+                </div>
+              )}
               <div>
                 <span className="text-slate-400 block font-medium">GSTIN:</span>
                 <span className="font-mono text-slate-700 dark:text-slate-300">{vendor?.taxId || 'N/A'}</span>
