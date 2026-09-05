@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, Bell, Sun, Moon, Menu, LogOut, ChevronDown, UserCheck } from 'lucide-react';
+import { Search, Bell, Sun, Moon, Menu, LogOut, ChevronDown, UserCheck, Hammer, Armchair } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { GlobalSearchModal } from '../common/GlobalSearchModal';
@@ -19,7 +19,6 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
-  // Generate page title from route path
   const pathParts = location.pathname.split('/').filter(Boolean);
   let pageTitle = 'Dashboard';
 
@@ -34,15 +33,15 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
   }
 
   const notifications = [
-    { id: 1, title: 'Invoice INV-00045 Paid', time: '10m ago', unread: true },
-    { id: 2, title: 'Purchase Order PO-00012 Received', time: '1h ago', unread: true },
-    { id: 3, title: 'Vendor Bill BILL-00012 Overdue Notice', time: '1d ago', unread: false },
+    { id: 1, title: 'Teak Logs Purchase PO-00012 Delivered', time: '10m ago', unread: true },
+    { id: 2, title: 'Invoice INV-00045 Paid by ABC Furniture', time: '1h ago', unread: true },
+    { id: 3, title: 'Workshop Assembly Completed for SO-00046', time: '1d ago', unread: false },
   ];
 
   return (
     <>
-      <header className="h-16 bg-white dark:bg-navy-900 border-b border-slate-200/80 dark:border-navy-800 px-4 lg:px-6 flex items-center justify-between sticky top-0 z-20 transition-colors">
-        {/* Left Side: Mobile Menu Hamburger & Page Title / Breadcrumb */}
+      <header className="h-16 bg-white dark:bg-navy-900 border-b border-slate-200/80 dark:border-navy-800 px-4 lg:px-6 flex items-center justify-between sticky top-0 z-20 transition-colors shadow-2xs">
+        {/* Left Side: Mobile Hamburger & Title */}
         <div className="flex items-center gap-3">
           <button
             onClick={onOpenMobileMenu}
@@ -53,9 +52,9 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
 
           <div>
             <nav className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-400 mb-0.5">
-              <span>Urban Furniture</span>
+              <span className="flex items-center gap-1"><Armchair className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" /> Urban Furniture</span>
               <span>/</span>
-              <span className="font-medium text-slate-600 dark:text-slate-300">{pageTitle}</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">{pageTitle}</span>
             </nav>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{pageTitle}</h2>
           </div>
@@ -63,13 +62,19 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
 
         {/* Right Side Controls */}
         <div className="flex items-center gap-2 sm:gap-4">
+          {/* Furniture Workshop Badge */}
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs font-bold">
+            <Hammer className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Woodcraft Studio</span>
+          </div>
+
           {/* Global Search Button */}
           <button
             onClick={() => setIsSearchOpen(true)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-navy-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white text-xs border border-transparent hover:border-slate-300 dark:hover:border-navy-700 transition-all"
           >
             <Search className="w-4 h-4" />
-            <span className="hidden sm:inline">Search...</span>
+            <span className="hidden sm:inline">Search ERP...</span>
             <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-navy-900 text-slate-400 rounded border border-slate-200 dark:border-navy-700">
               Ctrl+K
             </kbd>
@@ -100,7 +105,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
                 onMouseLeave={() => setIsNotificationsOpen(false)}
               >
                 <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-navy-700">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">Notifications</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white">Workshop Notifications</span>
                   <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">2 New</span>
                 </div>
                 <div className="space-y-2">
@@ -131,11 +136,11 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
               <img
                 src={user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150'}
                 alt={user?.name}
-                className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/30"
+                className="w-8 h-8 rounded-full object-cover ring-2 ring-amber-500/30"
               />
               <div className="hidden lg:flex flex-col text-left">
                 <span className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">{user?.name || 'John Doe'}</span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">{user?.role || 'Accountant'}</span>
+                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">{user?.role || 'Accountant'}</span>
               </div>
               <ChevronDown className="w-4 h-4 text-slate-400 hidden lg:block" />
             </button>
@@ -148,7 +153,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-navy-700 mb-1">
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.name}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user?.email}</p>
-                  <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                     <UserCheck className="w-3 h-3" /> Role: {user?.role}
                   </span>
                 </div>

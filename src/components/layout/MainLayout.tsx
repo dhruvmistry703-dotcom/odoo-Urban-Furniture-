@@ -21,8 +21,8 @@ export const MainLayout: React.FC = () => {
       {/* Mobile Drawer */}
       <MobileSidebar isOpen={isMobileOpen} onClose={() => setIsMobileOpen(false)} />
 
-      {/* Main View Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      {/* Main View Area with Wood Texture subtle pattern */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden wood-texture-bg">
         <Topbar onOpenMobileMenu={() => setIsMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">

@@ -6,6 +6,8 @@ import { CashFlowChart } from '../components/dashboard/CashFlowChart';
 import { ExpenseChart } from '../components/dashboard/ExpenseChart';
 import { RecentTransactions } from '../components/dashboard/RecentTransactions';
 import { QuickActionsGrid } from '../components/dashboard/QuickActionsGrid';
+import { FurnitureBlueprintVisualizer } from '../components/common/FurnitureBlueprintVisualizer';
+import { CarpentryToolsDiagram } from '../components/common/CarpentryToolsDiagram';
 import { useData } from '../context/DataContext';
 
 export const Dashboard: React.FC = () => {
@@ -23,7 +25,7 @@ export const Dashboard: React.FC = () => {
       {/* Header */}
       <PageHeader
         title="Dashboard"
-        subtitle="Overview of your business finances"
+        subtitle="Overview of your business finances and woodcraft operations"
         action={
           <div className="flex items-center gap-2 bg-white dark:bg-navy-800 border border-slate-200 dark:border-navy-700 px-3 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-medium">
             <Calendar className="w-4 h-4 text-slate-500" />
@@ -79,6 +81,12 @@ export const Dashboard: React.FC = () => {
 
       {/* Quick Actions Shortcuts */}
       <QuickActionsGrid />
+
+      {/* Furniture CAD & Blueprint Assembly Visualizer Widget */}
+      <FurnitureBlueprintVisualizer />
+
+      {/* Carpentry Hammer, Saw & Mortise Joinery Diagram Widget */}
+      <CarpentryToolsDiagram />
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
