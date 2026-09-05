@@ -5,6 +5,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-Fast_Build_Tool-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-Styling-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-Backend-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-5-000000?style=for-the-badge&logo=express&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Mongoose](https://img.shields.io/badge/Mongoose-ODM-880000?style=for-the-badge)
@@ -18,13 +19,15 @@ Urban Furniture ERP is a full-stack enterprise resource planning and accounting 
 
 The system brings business operations and financial management into a centralized platform for managing customers, vendors, products, sales orders, purchases, invoices, vendor bills, payments, accounting, budgets, analytics, users, and financial reports.
 
-
+---
 
 ## 📌 Overview
 
 Furniture and carpentry businesses require coordination between customers, vendors, products, sales, purchases, payments, and accounting.
 
 Urban Furniture ERP provides a centralized application to manage these operations and provides financial visibility through accounting and reporting modules.
+
+---
 
 ### Workflow
 
