@@ -26,6 +26,31 @@ const contactSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    street: {
+      type: String,
+      trim: true,
+    },
+    city: {
+      type: String,
+      trim: true,
+    },
+    state: {
+      type: String,
+      trim: true,
+    },
+    country: {
+      type: String,
+      trim: true,
+      default: 'India',
+    },
+    pincode: {
+      type: String,
+      trim: true,
+    },
+    image: {
+      type: String,
+      trim: true,
+    },
     taxId: {
       type: String,
       trim: true,

@@ -11,13 +11,16 @@ import { Dashboard } from './pages/Dashboard';
 
 import { ContactsList } from './pages/contacts/ContactsList';
 import { ContactDetail } from './pages/contacts/ContactDetail';
+import { ContactForm } from './pages/contacts/ContactForm';
 
 import { ProductsList } from './pages/products/ProductsList';
+import { ProductForm } from './pages/products/ProductForm';
 
 import { ChartOfAccounts } from './pages/accounting/ChartOfAccounts';
 import { Journals } from './pages/accounting/Journals';
 import { JournalEntryDetail } from './pages/accounting/JournalEntryDetail';
 import { AnalyticAccounts } from './pages/accounting/AnalyticAccounts';
+import { AnalyticAccountForm } from './pages/accounting/AnalyticAccountForm';
 
 import { SalesOrdersList } from './pages/sales/SalesOrdersList';
 import { CreateSalesOrder } from './pages/sales/CreateSalesOrder';
@@ -37,6 +40,7 @@ import { PaymentsList } from './pages/payments/PaymentsList';
 import { RecordPayment } from './pages/payments/RecordPayment';
 
 import { BudgetsList } from './pages/budgets/BudgetsList';
+import { BudgetDetail } from './pages/budgets/BudgetDetail';
 
 import { ProfitLossReport } from './pages/reports/ProfitLossReport';
 import { BalanceSheetReport } from './pages/reports/BalanceSheetReport';
@@ -193,7 +197,7 @@ export const App: React.FC = () => {
                     path="contacts/new"
                     element={
                       <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
-                        <ContactsList />
+                        <ContactForm />
                       </ProtectedRoute>
                     }
                   />
@@ -201,7 +205,7 @@ export const App: React.FC = () => {
                     path="contacts/:id"
                     element={
                       <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
-                        <ContactDetail />
+                        <ContactForm />
                       </ProtectedRoute>
                     }
                   />
@@ -219,7 +223,15 @@ export const App: React.FC = () => {
                     path="products/new"
                     element={
                       <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
-                        <ProductsList />
+                        <ProductForm />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="products/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <ProductForm />
                       </ProtectedRoute>
                     }
                   />
@@ -235,6 +247,14 @@ export const App: React.FC = () => {
                   />
                   <Route
                     path="accounts/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <ChartOfAccounts />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="accounts/:id"
                     element={
                       <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
                         <ChartOfAccounts />
@@ -386,6 +406,22 @@ export const App: React.FC = () => {
                     }
                   />
                   <Route
+                    path="analytic-accounts/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <AnalyticAccountForm />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="analytic-accounts/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <AnalyticAccountForm />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="budgets"
                     element={
                       <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
@@ -398,6 +434,14 @@ export const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
                         <BudgetsList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="budgets/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <BudgetDetail />
                       </ProtectedRoute>
                     }
                   />

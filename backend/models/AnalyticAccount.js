@@ -4,8 +4,6 @@ const analyticAccountSchema = new mongoose.Schema(
   {
     code: {
       type: String,
-      required: true,
-      unique: true,
       trim: true,
     },
     name: {
@@ -15,13 +13,19 @@ const analyticAccountSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['income', 'expense'],
       required: true,
+      default: 'Expenses',
+      enum: ['Income', 'Expenses', 'income', 'expense', 'Expense'],
+      set: function (v) {
+        return String(v || '').toLowerCase() === 'income' ? 'Income' : 'Expenses';
+      },
     },
-    description: String,
+    description: {
+      type: String,
+      default: '',
+    },
     status: {
       type: String,
-      enum: ['active', 'inactive', 'archived'],
       default: 'active',
     },
   },
@@ -29,6 +33,19 @@ const analyticAccountSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Auto-generate unique code if not provided
+analyticAccountSchema.pre('save', function (next) {
+  const normType = String(this.type || '').toLowerCase();
+  this.type = normType === 'income' ? 'Income' : 'Expenses';
+
+  if (!this.code || this.code.trim() === '') {
+    const prefix = this.type === 'Income' ? 'ANA-INC' : 'ANA-EXP';
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    this.code = `${prefix}-${Date.now().toString().slice(-4)}${rand.toString().slice(-2)}`;
+  }
+  next();
+});
 
 const AnalyticAccount = mongoose.model('AnalyticAccount', analyticAccountSchema);
 export default AnalyticAccount;

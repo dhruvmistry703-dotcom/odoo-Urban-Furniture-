@@ -7,8 +7,14 @@ export interface Contact {
   type: ContactType;
   email: string;
   phone: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pincode?: string;
+  image?: string;
   address: string;
-  taxId: string;
+  taxId?: string;
   totalInvoiced: number;
   totalPaid: number;
   outstanding: number;
@@ -29,6 +35,7 @@ export interface Product {
   stock: number;
   status: ProductStatus;
   description?: string;
+  image?: string;
 }
 
 export interface LineItem {
@@ -142,14 +149,33 @@ export interface Payment {
   status: PaymentStatus;
 }
 
-export type AccountType = 'asset' | 'liability' | 'income' | 'expense' | 'capital';
-export type AccountStatus = 'active' | 'inactive';
+export type AccountType =
+  | 'Asset'
+  | 'Liability'
+  | 'Bank'
+  | 'Capital'
+  | 'Cash'
+  | 'Income'
+  | 'Expenses'
+  | 'Other Expenses'
+  | 'Assets'
+  | 'Liabilities'
+  | 'Expense'
+  | 'asset'
+  | 'liability'
+  | 'income'
+  | 'expense'
+  | 'capital'
+  | string;
+
+export type AccountStatus = 'active' | 'inactive' | 'archived';
 
 export interface Account {
   id: string;
   code: string;
   name: string;
   type: AccountType;
+  reportGroup?: 'Balancesheet' | 'Profit and Loss' | string;
   parentAccountId?: string;
   parentAccountName?: string;
   balance: number;
@@ -195,25 +221,52 @@ export interface JournalEntry {
 }
 
 export interface AnalyticAccount {
-  id: string;
-  code: string;
+  _id?: string;
+  id?: string;
+  code?: string;
   name: string;
-  type: 'income' | 'expense';
-  description: string;
-  status: 'active' | 'inactive';
+  type: 'Income' | 'Expenses' | 'income' | 'expense';
+  description?: string;
+  status?: 'active' | 'inactive' | 'archived';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type BudgetStatus = 'NEW' | 'CONFIRMED' | 'REVISED' | 'CANCELLED' | 'active' | 'exceeded' | 'closed' | 'archived';
+
+export interface BudgetRevision {
+  revisionNumber: number;
+  revisedAt: string;
+  revisedBy: string;
+  previousAmount: number;
+  newAmount: number;
+  notes?: string;
 }
 
 export interface Budget {
-  id: string;
+  _id?: string;
+  id?: string;
   name: string;
-  analyticAccountId: string;
-  analyticAccountName: string;
-  period: string;
+  analyticAccountId: string | AnalyticAccount;
+  analyticAccountName?: string;
+  type?: 'Income' | 'Expenses' | 'income' | 'expense';
+  responsiblePersonId?: string | any;
+  responsiblePersonName?: string;
+  startDate?: string;
+  endDate?: string;
+  period?: string;
   planned: number;
+  originalPlanned?: number;
   actual: number;
   remaining: number;
   utilization: number; // percentage
-  status: 'active' | 'exceeded' | 'closed';
+  status: BudgetStatus;
+  originalBudgetId?: string | any;
+  revisedBudgetId?: string | any;
+  notes?: string;
+  revisions?: BudgetRevision[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type UserRole = 'ADMIN' | 'ACCOUNTANT' | 'CONTACT';
