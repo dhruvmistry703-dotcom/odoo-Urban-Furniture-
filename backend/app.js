@@ -29,10 +29,8 @@ const app = express();
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}):(3000|5173|5174)$/.test(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error(`CORS origin not allowed: ${origin}`));
+      // Allow all origins (localhost, 127.0.0.1, LAN IP, postman/curl)
+      callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
