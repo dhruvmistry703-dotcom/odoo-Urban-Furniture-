@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import dns from 'node:dns';
 
 dotenv.config();
 
@@ -8,6 +9,14 @@ export const connectDB = async () => {
   if (!mongoUri) {
     throw new Error('MONGODB_URI is not defined in environment variables');
   }
+
+  // Atlas SRV connection strings require DNS SRV resolution. Some local DNS
+  // providers refuse SRV queries, so allow a public or custom resolver.
+  const dnsServers = (process.env.MONGODB_DNS_SERVERS || '1.1.1.1,8.8.8.8')
+    .split(',')
+    .map(server => server.trim())
+    .filter(Boolean);
+  dns.setServers(dnsServers);
 
   try {
     const conn = await mongoose.connect(mongoUri, {
