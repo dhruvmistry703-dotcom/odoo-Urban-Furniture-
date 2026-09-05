@@ -87,6 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           { label: 'Products & Furniture', path: '/products', icon: <Package className="w-4 h-4 shrink-0" /> },
           { label: 'Chart of Accounts', path: '/accounts', icon: <BookOpen className="w-4 h-4 shrink-0" /> },
           { label: 'Journals', path: '/journals', icon: <Receipt className="w-4 h-4 shrink-0" /> },
+          { label: 'Journal Entries', path: '/journal-entries', icon: <FileText className="w-4 h-4 shrink-0" /> },
         ],
       },
       {
