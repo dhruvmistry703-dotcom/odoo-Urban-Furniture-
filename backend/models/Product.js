@@ -9,8 +9,11 @@ const productSchema = new mongoose.Schema(
     },
     sku: {
       type: String,
-      required: [true, 'SKU is required'],
-      unique: true,
+      trim: true,
+      default: () => `FURN-PRD-${Math.floor(1000 + Math.random() * 9000)}`,
+    },
+    image: {
+      type: String,
       trim: true,
     },
     type: {

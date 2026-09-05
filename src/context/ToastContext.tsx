@@ -12,13 +12,21 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const showToast = useCallback((toast: Omit<ToastMessage, 'id'>) => {
-    const id = `toast-${Date.now()}-${Math.random()}`;
-    const newToast: ToastMessage = { ...toast, id };
-    setToasts(prev => [...prev, newToast]);
+    setToasts(prev => {
+      const isDuplicate = prev.some(
+        t => t.title === toast.title && t.message === toast.message && t.type === toast.type
+      );
+      if (isDuplicate) return prev;
 
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 4000);
+      const id = `toast-${Date.now()}-${Math.random()}`;
+      const newToast: ToastMessage = { ...toast, id };
+
+      setTimeout(() => {
+        setToasts(current => current.filter(item => item.id !== id));
+      }, 4000);
+
+      return [...prev, newToast];
+    });
   }, []);
 
   const removeToast = (id: string) => {
