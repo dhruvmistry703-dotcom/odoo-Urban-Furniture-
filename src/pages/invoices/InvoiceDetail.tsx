@@ -44,7 +44,6 @@ export const InvoiceDetail: React.FC = () => {
     order.id === (invoice.salesOrderId?._id || invoice.salesOrderId?.id || invoice.salesOrderId)
   );
   const relatedPayments = payments.filter(p => p.referenceId === invoiceId || p.referenceNumber === invoice.invoiceNumber);
-  const linkedSO = invoice.salesOrderId ? salesOrders.find(so => ((so as any)._id || so.id) === ((invoice.salesOrderId as any)?._id || invoice.salesOrderId?.id || invoice.salesOrderId)) : null;
 
   const steps: StepItem[] = [
     { label: 'Sales Order', isDone: !!linkedSO, refCode: linkedSO ? linkedSO.orderNumber : 'Direct Invoice' },
