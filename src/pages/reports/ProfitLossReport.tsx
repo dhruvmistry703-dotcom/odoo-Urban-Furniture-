@@ -5,6 +5,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { exportProfitLossPdf } from '../../utils/reportPdf';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 export const ProfitLossReport: React.FC = () => {
@@ -58,10 +59,11 @@ export const ProfitLossReport: React.FC = () => {
   ];
 
   const handleExportPDF = () => {
+    exportProfitLossPdf(report, displayDateRange);
     showToast({
       type: 'info',
       title: 'Exporting Profit & Loss Statement',
-      message: 'Generating P_and_L_Report_Sep_2026.pdf...',
+      message: 'Profit & Loss PDF downloaded.',
     });
   };
 
