@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Contact from '../models/Contact.js';
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -59,12 +60,22 @@ export const createUser = async (req, res, next) => {
       });
     }
 
+    const userRole = role ? role.toUpperCase() : 'ACCOUNTANT';
+    let resolvedContactId = contactId || null;
+
+    if (userRole === 'CONTACT' && !resolvedContactId) {
+      const matchedContact = await Contact.findOne({ email: email.toLowerCase() });
+      if (matchedContact) {
+        resolvedContactId = matchedContact._id;
+      }
+    }
+
     const user = await User.create({
       name,
       email: email.toLowerCase(),
       password,
-      role: role ? role.toUpperCase() : 'ACCOUNTANT',
-      contactId: role === 'CONTACT' ? contactId : null,
+      role: userRole,
+      contactId: userRole === 'CONTACT' ? resolvedContactId : null,
       isActive: isActive !== undefined ? isActive : true,
     });
 
@@ -104,7 +115,14 @@ export const updateUser = async (req, res, next) => {
     if (role) user.role = role.toUpperCase();
     if (contactId !== undefined) user.contactId = contactId || null;
     if (isActive !== undefined) user.isActive = isActive;
-    if (password) user.password = password; // Pre-save hook will hash it
+    if (password) user.password = password;
+
+    if (user.role === 'CONTACT' && !user.contactId) {
+      const matchedContact = await Contact.findOne({ email: user.email.toLowerCase() });
+      if (matchedContact) {
+        user.contactId = matchedContact._id;
+      }
+    }
 
     await user.save();
 

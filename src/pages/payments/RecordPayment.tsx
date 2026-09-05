@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, CreditCard } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, CreditCard, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
 import { useData } from '../../context/DataContext';
+import { useToast } from '../../context/ToastContext';
 import { PaymentType, PaymentMethod, JournalEntry } from '../../types';
 
 export const RecordPayment: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { contacts, invoices, bills, recordPayment } = useData();
+  const { showToast } = useToast();
 
   const state = (location.state as any) || {};
 
@@ -41,6 +43,14 @@ export const RecordPayment: React.FC = () => {
     ? invoices.filter(i => i.customerId === contactId && i.outstandingAmount > 0)
     : bills.filter(b => b.vendorId === contactId && b.outstandingAmount > 0);
 
+  const selectedDoc = paymentType === 'customer_payment'
+    ? invoices.find(i => i.id === referenceId)
+    : bills.find(b => b.id === referenceId);
+
+  const maxAllowed = selectedDoc ? selectedDoc.outstandingAmount : Infinity;
+  const remainingBalance = selectedDoc ? Math.max(0, selectedDoc.outstandingAmount - Number(amount || 0)) : 0;
+  const isOverpaid = selectedDoc ? Number(amount || 0) > selectedDoc.outstandingAmount : false;
+
   const handleDocChange = (docId: string) => {
     setReferenceId(docId);
     if (paymentType === 'customer_payment') {
@@ -61,24 +71,42 @@ export const RecordPayment: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = recordPayment({
-      type: paymentType,
-      contactId,
-      referenceId,
-      referenceNumber,
-      paymentDate,
-      method,
-      bankAccount: method === 'bank' ? bankAccount : undefined,
-      amount: Number(amount),
-      referenceNo,
-      notes,
-    });
+    if (Number(amount) <= 0) {
+      showToast({ type: 'error', title: 'Invalid Amount', message: 'Payment amount must be greater than zero.' });
+      return;
+    }
 
-    setSuccessInfo({
-      amount: Number(amount),
-      method: method === 'bank' ? bankAccount : 'Cash',
-      je: result.journalEntry,
-    });
+    if (isOverpaid && selectedDoc) {
+      showToast({
+        type: 'error',
+        title: 'Overpayment Not Allowed',
+        message: `Payment amount (₹${Number(amount).toLocaleString('en-IN')}) cannot exceed the outstanding balance (₹${selectedDoc.outstandingAmount.toLocaleString('en-IN')}).`,
+      });
+      return;
+    }
+
+    try {
+      const result = recordPayment({
+        type: paymentType,
+        contactId,
+        referenceId,
+        referenceNumber,
+        paymentDate,
+        method,
+        bankAccount: method === 'bank' ? bankAccount : undefined,
+        amount: Number(amount),
+        referenceNo,
+        notes,
+      });
+
+      setSuccessInfo({
+        amount: Number(amount),
+        method: method === 'bank' ? bankAccount : 'Cash',
+        je: result.journalEntry,
+      });
+    } catch (err: any) {
+      showToast({ type: 'error', title: 'Payment Failed', message: err.message || 'Could not record payment.' });
+    }
   };
 
   return (
@@ -162,11 +190,43 @@ export const RecordPayment: React.FC = () => {
               onChange={e => handleDocChange(e.target.value)}
             />
 
+            {/* Outstanding & Remaining Balance Preview Card */}
+            {selectedDoc && (
+              <div className={`p-4 rounded-xl border text-xs space-y-2 ${
+                isOverpaid
+                  ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                  : 'bg-slate-50 dark:bg-navy-900 border-slate-200 dark:border-navy-700 text-slate-700 dark:text-slate-300'
+              }`}>
+                <div className="flex justify-between items-center font-semibold">
+                  <span>Document Outstanding Amount:</span>
+                  <span className="font-mono text-sm">₹{selectedDoc.outstandingAmount.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center font-semibold">
+                  <span>Payment Amount:</span>
+                  <span className="font-mono text-sm">₹{Number(amount || 0).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-navy-700 font-bold">
+                  <span>Remaining Balance After Payment:</span>
+                  <span className={`font-mono text-sm ${isOverpaid ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    ₹{remainingBalance.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                {isOverpaid && (
+                  <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-bold pt-1">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>Error: Payment amount cannot exceed the document outstanding balance!</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Payment Amount (₹)"
                 type="number"
                 required
+                min={0.01}
+                max={selectedDoc ? selectedDoc.outstandingAmount : undefined}
                 value={amount}
                 onChange={e => setAmount(Number(e.target.value))}
               />
@@ -228,7 +288,7 @@ export const RecordPayment: React.FC = () => {
               <Button type="button" variant="outline" onClick={() => navigate('/payments')}>
                 Cancel
               </Button>
-              <Button type="submit" variant="primary" icon={<CreditCard className="w-4 h-4" />}>
+              <Button type="submit" variant="primary" icon={<CreditCard className="w-4 h-4" />} disabled={isOverpaid}>
                 Record Payment
               </Button>
             </div>

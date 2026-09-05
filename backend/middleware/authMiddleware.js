@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Contact from '../models/Contact.js';
 
 export const protect = async (req, res, next) => {
   let token;
@@ -47,13 +48,28 @@ export const protect = async (req, res, next) => {
       });
     }
 
+    // Smart Contact resolution if user role is CONTACT but contactId was not saved
+    let contactId = user.contactId ? user.contactId.toString() : null;
+    if (user.role === 'CONTACT' && !contactId && user.email) {
+      try {
+        const matchedContact = await Contact.findOne({ email: user.email.toLowerCase() });
+        if (matchedContact) {
+          contactId = matchedContact._id.toString();
+          user.contactId = matchedContact._id;
+          await user.save();
+        }
+      } catch (e) {
+        console.error('Error auto-linking contact in protect middleware:', e.message);
+      }
+    }
+
     // 4. Attach authenticated user details to req.user
     req.user = {
       id: user._id.toString(),
       name: user.name,
       email: user.email,
       role: user.role,
-      contactId: user.contactId ? user.contactId.toString() : null,
+      contactId: contactId,
     };
 
     next();
