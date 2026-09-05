@@ -25,8 +25,8 @@ export const Dashboard: React.FC = () => {
         title="Dashboard"
         subtitle="Overview of your business finances"
         action={
-          <div className="flex items-center gap-2 bg-white dark:bg-navy-800 border border-slate-200 dark:border-navy-700 px-3 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-semibold shadow-xs">
-            <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-center gap-2 bg-white dark:bg-navy-800 border border-slate-200 dark:border-navy-700 px-3 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 font-medium">
+            <Calendar className="w-4 h-4 text-slate-500" />
             <select
               value={dateRange}
               onChange={e => setDateRange(e.target.value)}
@@ -49,7 +49,7 @@ export const Dashboard: React.FC = () => {
           change="+12.5%"
           isPositive={true}
           comparisonText="from last month"
-          icon={<DollarSign className="w-5 h-5" />}
+          icon={<DollarSign className="w-4 h-4" />}
         />
         <StatCard
           title="Total Purchases"
@@ -57,7 +57,7 @@ export const Dashboard: React.FC = () => {
           change="+8.2%"
           isPositive={true}
           comparisonText="from last month"
-          icon={<ShoppingBag className="w-5 h-5" />}
+          icon={<ShoppingBag className="w-4 h-4" />}
         />
         <StatCard
           title="Total Receivable"
@@ -65,7 +65,7 @@ export const Dashboard: React.FC = () => {
           change="-3.4%"
           isPositive={false}
           comparisonText="from last month"
-          icon={<ArrowDownLeft className="w-5 h-5 text-amber-500" />}
+          icon={<ArrowDownLeft className="w-4 h-4" />}
         />
         <StatCard
           title="Total Payable"
@@ -73,7 +73,7 @@ export const Dashboard: React.FC = () => {
           change="-1.8%"
           isPositive={false}
           comparisonText="from last month"
-          icon={<ArrowUpRight className="w-5 h-5 text-rose-500" />}
+          icon={<ArrowUpRight className="w-4 h-4" />}
         />
       </div>
 
