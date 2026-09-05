@@ -4,8 +4,6 @@ const accountSchema = new mongoose.Schema(
   {
     code: {
       type: String,
-      unique: true,
-      sparse: true,
       trim: true,
     },
     name: {
@@ -15,8 +13,13 @@ const accountSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      required: true,
+      required: [true, 'Account type is required'],
       trim: true,
+    },
+    reportGroup: {
+      type: String,
+      enum: ['Balancesheet', 'Profit and Loss', 'Both'],
+      default: 'Balancesheet',
     },
     parentAccountId: {
       type: mongoose.Schema.Types.ObjectId,

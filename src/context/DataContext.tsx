@@ -9,6 +9,7 @@ import {
   VendorBill,
   Payment,
   Account,
+  AccountStatus,
   Journal,
   JournalEntry,
   AnalyticAccount,
@@ -72,7 +73,7 @@ interface DataContextType {
     referenceNo?: string;
     notes?: string;
   }) => { payment: Payment; journalEntry: JournalEntry };
-  addAccount: (account: Omit<Account, 'id' | 'balance'>) => Account;
+  addAccount: (account: Omit<Account, 'id' | 'balance'> & { balance?: number }) => Account;
   updateAccount: (id: string, updates: Partial<Account>) => void;
   archiveAccount: (id: string) => void;
   addJournal: (journal: Omit<Journal, 'id'>) => Journal;
@@ -195,16 +196,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: String(doc._id || doc.id),
             code: doc.code || '',
             name: doc.name || '',
-            type: doc.type || 'asset',
+            type: doc.type || 'Asset',
+            reportGroup: doc.reportGroup || (['Income', 'Expenses', 'Other Expenses', 'income', 'expense'].includes(doc.type) ? 'Profit and Loss' : 'Balancesheet'),
             balance: doc.balance || 0,
             status: doc.status || 'active',
-            parentAccountId: doc.parentAccountId ? String(doc.parentAccountId) : undefined,
-            parentAccountName: doc.parentAccountName,
           }));
           setAccounts(mappedAccounts);
         }
-      } catch (e) {
-        console.warn('[DataContext] Error fetching accounts from Atlas:', e);
+      } catch {
+        // silent
       }
     } catch (err) {
       console.warn('[DataContext] MongoDB Atlas sync error:', err);
@@ -669,59 +669,54 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { payment: newPayment, journalEntry: newJournalEntry };
   };
 
-  const addAccount = (accData: Omit<Account, 'id' | 'balance'>) => {
+  const addAccount = (accData: Omit<Account, 'id' | 'balance'> & { balance?: number }) => {
     const tempId = `acc-${Date.now()}`;
     const newAccount: Account = {
       ...accData,
       id: tempId,
-      balance: 0,
+      balance: accData.balance || 0,
       status: accData.status || 'active',
     };
     setAccounts(prev => [newAccount, ...prev]);
 
-    // Asynchronously persist to MongoDB Atlas
-    api.createAccount(accData)
+    // Asynchronously persist to MongoDB Atlas cloud database
+    api.createAccount({
+      code: accData.code,
+      name: accData.name,
+      type: accData.type,
+      reportGroup: accData.reportGroup,
+      status: accData.status || 'active',
+      balance: accData.balance || 0,
+    })
       .then(res => {
-        if (res && res.account) {
-          const saved: Account = {
-            id: String(res.account._id || res.account.id),
-            code: res.account.code,
-            name: res.account.name,
-            type: res.account.type,
-            balance: res.account.balance || 0,
-            status: res.account.status || 'active',
-          };
-          setAccounts(prev => prev.map(a => a.id === tempId ? saved : a));
+        if (res && res.account && res.account._id) {
+          setAccounts(prev => prev.map(a => a.id === tempId ? { ...a, id: String(res.account._id) } : a));
         }
       })
       .catch(err => {
-        console.error('Failed to save account to MongoDB Atlas:', err);
+        console.warn('Could not persist account to MongoDB Atlas:', err);
       });
 
     return newAccount;
   };
 
   const updateAccount = (id: string, updates: Partial<Account>) => {
-    setAccounts(prev => prev.map(a => (a.id === id ? { ...a, ...updates } : a)));
-
+    setAccounts(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
     api.updateAccount(id, updates).catch(err => {
-      console.error('Failed to update account in MongoDB Atlas:', err);
+      console.warn('Could not update account in MongoDB Atlas:', err);
     });
   };
 
   const archiveAccount = (id: string) => {
-    setAccounts(prev =>
-      prev.map(a => {
-        if (a.id === id) {
-          const nextStatus = a.status === 'archived' ? 'active' : 'archived';
-          return { ...a, status: nextStatus };
-        }
-        return a;
-      })
-    );
-
+    setAccounts(prev => prev.map(a => {
+      if (a.id === id) {
+        const newStatus: AccountStatus = a.status === 'archived' ? 'active' : 'archived';
+        return { ...a, status: newStatus };
+      }
+      return a;
+    }));
     api.archiveAccount(id).catch(err => {
-      console.error('Failed to archive account in MongoDB Atlas:', err);
+      console.warn('Could not archive account in MongoDB Atlas:', err);
     });
   };
 

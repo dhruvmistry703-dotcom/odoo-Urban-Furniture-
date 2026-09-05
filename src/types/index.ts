@@ -150,31 +150,32 @@ export interface Payment {
 }
 
 export type AccountType =
-  | 'asset'
-  | 'liability'
-  | 'income'
-  | 'expense'
-  | 'capital'
   | 'Asset'
-  | 'Assets'
   | 'Liability'
-  | 'Liabilities'
   | 'Bank'
   | 'Capital'
   | 'Cash'
   | 'Income'
   | 'Expenses'
-  | 'Expense'
   | 'Other Expenses'
+  | 'Assets'
+  | 'Liabilities'
+  | 'Expense'
+  | 'asset'
+  | 'liability'
+  | 'income'
+  | 'expense'
+  | 'capital'
   | string;
 
 export type AccountStatus = 'active' | 'inactive' | 'archived';
 
 export interface Account {
   id: string;
-  code?: string;
+  code: string;
   name: string;
   type: AccountType;
+  reportGroup?: 'Balancesheet' | 'Profit and Loss' | string;
   parentAccountId?: string;
   parentAccountName?: string;
   balance: number;
