@@ -108,7 +108,12 @@ export const ChartOfAccounts: React.FC = () => {
       setFormBalance(0);
       setFormStatus('active');
     }
-  }, [id, isCreateRoute, accounts]);
+    // Intentionally only re-run when route params change (id / create route).
+    // Avoid listening to `accounts` here because background syncing can
+    // produce new array references and unexpectedly reset the form while
+    // the user is interacting with it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isCreateRoute]);
 
   // Derive report group from selected type
   const currentReportGroup = useMemo(() => {
