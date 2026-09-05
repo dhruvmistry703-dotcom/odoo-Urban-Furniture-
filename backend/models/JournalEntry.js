@@ -2,11 +2,14 @@ import mongoose from 'mongoose';
 
 const journalLineSchema = new mongoose.Schema({
   accountId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Account',
+    type: mongoose.Schema.Types.Mixed,
   },
   accountCode: String,
   accountName: String,
+  partnerId: {
+    type: mongoose.Schema.Types.Mixed,
+  },
+  partnerName: String,
   debit: {
     type: Number,
     default: 0,
@@ -33,10 +36,17 @@ const journalEntrySchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    journalId: {
+      type: mongoose.Schema.Types.Mixed,
+    },
     journalName: {
       type: String,
       default: 'General Journal',
     },
+    partnerId: {
+      type: mongoose.Schema.Types.Mixed,
+    },
+    partnerName: String,
     lines: [journalLineSchema],
     totalDebit: {
       type: Number,
@@ -54,8 +64,8 @@ const journalEntrySchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['posted', 'draft'],
-      default: 'posted',
+      enum: ['posted', 'draft', 'cancelled'],
+      default: 'draft',
     },
   },
   {

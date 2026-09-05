@@ -77,7 +77,11 @@ interface DataContextType {
   updateAccount: (id: string, updates: Partial<Account>) => void;
   archiveAccount: (id: string) => void;
   addJournal: (journal: Omit<Journal, 'id'>) => Journal;
-  addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'entryNumber' | 'isBalanced'>) => JournalEntry;
+  updateJournal: (id: string, updates: Partial<Journal>) => void;
+  addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'entryNumber' | 'isBalanced' | 'totalDebit' | 'totalCredit'>) => JournalEntry;
+  updateJournalEntry: (id: string, updates: Partial<JournalEntry>) => void;
+  postJournalEntry: (id: string) => void;
+  cancelJournalEntry: (id: string) => void;
   addAnalyticAccount: (account: Omit<AnalyticAccount, 'id'>) => AnalyticAccount;
   addBudget: (budget: Omit<Budget, 'id' | 'actual' | 'remaining' | 'utilization' | 'status'>) => Budget;
   resetDemoData: () => void;
@@ -202,6 +206,60 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             status: doc.status || 'active',
           }));
           setAccounts(mappedAccounts);
+        }
+      } catch {
+        // silent
+      }
+
+      // 5. Fetch journals from MongoDB Atlas
+      try {
+        const jrnRes = await api.getJournals();
+        if (jrnRes && jrnRes.journals && Array.isArray(jrnRes.journals) && jrnRes.journals.length > 0) {
+          const mappedJournals: Journal[] = jrnRes.journals.map((doc: any) => ({
+            id: String(doc._id || doc.id),
+            name: doc.name || '',
+            code: doc.code || '',
+            type: doc.type || 'sales',
+            defaultAccountId: String(doc.defaultAccountId?._id || doc.defaultAccountId || ''),
+            defaultAccountName: doc.defaultAccountName || '',
+            status: doc.status || 'active',
+          }));
+          setJournals(mappedJournals);
+        }
+      } catch {
+        // silent
+      }
+
+      // 6. Fetch journal entries from MongoDB Atlas
+      try {
+        const jeRes = await api.getJournalEntries();
+        if (jeRes && jeRes.entries && Array.isArray(jeRes.entries) && jeRes.entries.length > 0) {
+          const mappedEntries: JournalEntry[] = jeRes.entries.map((doc: any) => ({
+            id: String(doc._id || doc.id),
+            entryNumber: doc.entryNumber || '',
+            date: doc.date || '',
+            reference: doc.reference || '',
+            journalId: String(doc.journalId?._id || doc.journalId || ''),
+            journalName: doc.journalName || '',
+            partnerId: String(doc.partnerId?._id || doc.partnerId || ''),
+            partnerName: doc.partnerName || '',
+            lines: (doc.lines || []).map((l: any, idx: number) => ({
+              id: String(l._id || l.id || `line-${idx}`),
+              accountId: String(l.accountId?._id || l.accountId || ''),
+              accountCode: l.accountCode || '',
+              accountName: l.accountName || '',
+              partnerId: String(l.partnerId?._id || l.partnerId || ''),
+              partnerName: l.partnerName || '',
+              debit: Number(l.debit || 0),
+              credit: Number(l.credit || 0),
+              label: l.label || '',
+            })),
+            totalDebit: Number(doc.totalDebit || 0),
+            totalCredit: Number(doc.totalCredit || 0),
+            isBalanced: Boolean(doc.isBalanced),
+            status: doc.status || 'draft',
+          }));
+          setJournalEntries(mappedEntries);
         }
       } catch {
         // silent
@@ -726,14 +784,40 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: `jrn-${Date.now()}`,
     };
     setJournals(prev => [...prev, newJournal]);
+    api.createJournal(newJournal).catch(err => {
+      console.warn('Could not create journal in MongoDB Atlas:', err);
+    });
     return newJournal;
   };
 
-  const addJournalEntry = (jeData: Omit<JournalEntry, 'id' | 'entryNumber' | 'isBalanced'>) => {
-    const entryNumber = `JE-${String(journalEntries.length + 57).padStart(5, '0')}`;
+  const updateJournal = (id: string, updates: Partial<Journal>) => {
+    setJournals(prev => prev.map(j => (j.id === id ? { ...j, ...updates } : j)));
+    api.updateJournal(id, updates).catch(err => {
+      console.warn('Could not update journal in MongoDB Atlas:', err);
+    });
+  };
+
+  const generateEntryNumber = (journalType?: string) => {
+    const year = new Date().getFullYear();
+    const prefixMap: Record<string, string> = {
+      sales: 'Inv',
+      purchase: 'Bill',
+      bank: 'BNK',
+      cash: 'CSH',
+    };
+    const prefix = prefixMap[journalType || ''] || 'JE';
+    const count = journalEntries.filter(e => e.entryNumber.startsWith(`${prefix}/${year}/`)).length;
+    return `${prefix}/${year}/${String(count + 1).padStart(4, '0')}`;
+  };
+
+  const addJournalEntry = (
+    jeData: Omit<JournalEntry, 'id' | 'entryNumber' | 'isBalanced' | 'totalDebit' | 'totalCredit'>
+  ) => {
     const totalDebit = jeData.lines.reduce((s, l) => s + l.debit, 0);
     const totalCredit = jeData.lines.reduce((s, l) => s + l.credit, 0);
     const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+    const journal = journals.find(j => j.id === jeData.journalId);
+    const entryNumber = generateEntryNumber(journal?.type);
 
     const newJE: JournalEntry = {
       ...jeData,
@@ -744,7 +828,53 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isBalanced,
     };
     setJournalEntries(prev => [newJE, ...prev]);
+    api.createJournalEntry(newJE).catch(err => {
+      console.warn('Could not create journal entry in MongoDB Atlas:', err);
+    });
     return newJE;
+  };
+
+  const updateJournalEntry = (id: string, updates: Partial<JournalEntry>) => {
+    setJournalEntries(prev =>
+      prev.map(je => {
+        if (je.id !== id) return je;
+        const merged = { ...je, ...updates };
+        if (updates.lines) {
+          merged.totalDebit = merged.lines.reduce((s, l) => s + l.debit, 0);
+          merged.totalCredit = merged.lines.reduce((s, l) => s + l.credit, 0);
+          merged.isBalanced = Math.abs(merged.totalDebit - merged.totalCredit) < 0.01;
+        }
+        return merged;
+      })
+    );
+    api.updateJournalEntry(id, updates).catch(err => {
+      console.warn('Could not update journal entry in MongoDB Atlas:', err);
+    });
+  };
+
+  const postJournalEntry = (id: string) => {
+    setJournalEntries(prev =>
+      prev.map(je => {
+        if (je.id !== id) return je;
+        const totalDebit = je.lines.reduce((s, l) => s + l.debit, 0);
+        const totalCredit = je.lines.reduce((s, l) => s + l.credit, 0);
+        const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+        if (!isBalanced) return je;
+        return { ...je, status: 'posted' as const, totalDebit, totalCredit, isBalanced: true };
+      })
+    );
+    api.postJournalEntry(id).catch(err => {
+      console.warn('Could not post journal entry in MongoDB Atlas:', err);
+    });
+  };
+
+  const cancelJournalEntry = (id: string) => {
+    setJournalEntries(prev =>
+      prev.map(je => (je.id === id ? { ...je, status: 'cancelled' as const } : je))
+    );
+    api.cancelJournalEntry(id).catch(err => {
+      console.warn('Could not cancel journal entry in MongoDB Atlas:', err);
+    });
   };
 
   const addAnalyticAccount = (anaData: Omit<AnalyticAccount, 'id'>) => {
@@ -819,7 +949,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateAccount,
         archiveAccount,
         addJournal,
+        updateJournal,
         addJournalEntry,
+        updateJournalEntry,
+        postJournalEntry,
+        cancelJournalEntry,
         addAnalyticAccount,
         addBudget,
         resetDemoData,

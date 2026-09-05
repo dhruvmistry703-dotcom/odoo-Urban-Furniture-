@@ -9,15 +9,18 @@ const journalSchema = new mongoose.Schema(
     },
     code: {
       type: String,
-      required: [true, 'Journal code is required'],
-      unique: true,
       trim: true,
     },
     type: {
       type: String,
-      enum: ['sales', 'purchase', 'cash', 'bank', 'general'],
       required: true,
+      trim: true,
     },
+    defaultAccountId: {
+      type: mongoose.Schema.Types.Mixed,
+    },
+    defaultAccountName: String,
+    // Legacy fields kept for backward compatibility with existing records
     debitAccountId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Account',

@@ -14,10 +14,23 @@ export const getJournals = async (req, res, next) => {
 
 // @desc    Create journal
 // @route   POST /api/journals
-// @access  Protected (ADMIN, ACCOUNTANT)
+// @access  Public / Optional Protect
 export const createJournal = async (req, res, next) => {
   try {
-    const journal = await Journal.create(req.body);
+    const payload = { ...req.body };
+    if (!payload.code) {
+      const type = (payload.type || '').toLowerCase();
+      const prefixMap = {
+        sales: 'SAL',
+        purchase: 'PUR',
+        bank: 'BNK',
+        cash: 'CSH',
+      };
+      const prefix = prefixMap[type] || 'JRN';
+      const count = await Journal.countDocuments();
+      payload.code = `${prefix}${String(count + 1).padStart(2, '0')}`;
+    }
+    const journal = await Journal.create(payload);
     res.status(201).json({ success: true, journal });
   } catch (error) {
     next(error);
@@ -26,16 +39,9 @@ export const createJournal = async (req, res, next) => {
 
 // @desc    Update journal
 // @route   PUT /api/journals/:id
-// @access  Protected (ADMIN, ACCOUNTANT)
+// @access  Public / Optional Protect
 export const updateJournal = async (req, res, next) => {
   try {
-    if (req.body.status === 'archived' && req.user.role !== 'ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only Administrators have permission to archive journals',
-      });
-    }
-
     const journal = await Journal.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
@@ -51,16 +57,9 @@ export const updateJournal = async (req, res, next) => {
 
 // @desc    Archive journal
 // @route   PATCH /api/journals/:id/archive
-// @access  Protected (ADMIN only)
+// @access  Public / Optional Protect
 export const archiveJournal = async (req, res, next) => {
   try {
-    if (req.user.role !== 'ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only Administrators have permission to archive journals',
-      });
-    }
-
     const journal = await Journal.findById(req.params.id);
     if (!journal) {
       return res.status(404).json({ success: false, message: 'Journal not found' });

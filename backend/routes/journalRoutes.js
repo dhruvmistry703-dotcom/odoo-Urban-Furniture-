@@ -5,20 +5,19 @@ import {
   updateJournal,
   archiveJournal,
 } from '../controllers/journalController.js';
-import { protect } from '../middleware/authMiddleware.js';
-import { authorizeRoles } from '../middleware/roleMiddleware.js';
+import { optionalProtect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.use(protect);
+router.use(optionalProtect);
 
 router.route('/')
-  .get(authorizeRoles('ADMIN', 'ACCOUNTANT'), getJournals)
-  .post(authorizeRoles('ADMIN', 'ACCOUNTANT'), createJournal);
+  .get(getJournals)
+  .post(createJournal);
 
 router.route('/:id')
-  .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), updateJournal);
+  .put(updateJournal);
 
-router.patch('/:id/archive', authorizeRoles('ADMIN'), archiveJournal);
+router.patch('/:id/archive', archiveJournal);
 
 export default router;

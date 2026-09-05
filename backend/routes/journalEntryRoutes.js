@@ -3,20 +3,25 @@ import {
   getJournalEntries,
   getJournalEntryById,
   createJournalEntry,
+  updateJournalEntry,
+  postJournalEntry,
+  cancelJournalEntry,
 } from '../controllers/journalEntryController.js';
-import { protect } from '../middleware/authMiddleware.js';
-import { authorizeRoles } from '../middleware/roleMiddleware.js';
+import { optionalProtect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.use(protect);
-router.use(authorizeRoles('ADMIN', 'ACCOUNTANT'));
+router.use(optionalProtect);
 
 router.route('/')
   .get(getJournalEntries)
   .post(createJournalEntry);
 
 router.route('/:id')
-  .get(getJournalEntryById);
+  .get(getJournalEntryById)
+  .put(updateJournalEntry);
+
+router.patch('/:id/post', postJournalEntry);
+router.patch('/:id/cancel', cancelJournalEntry);
 
 export default router;
