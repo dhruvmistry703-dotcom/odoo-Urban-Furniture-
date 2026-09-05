@@ -43,11 +43,60 @@ import { BalanceSheetReport } from './pages/reports/BalanceSheetReport';
 import { BudgetReport } from './pages/reports/BudgetReport';
 
 import { Settings } from './pages/Settings';
+import { UserManagement } from './pages/users/UserManagement';
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
+import { MyInvoices } from './pages/portal/MyInvoices';
+import { MyBills } from './pages/portal/MyBills';
+import { MyPayments } from './pages/portal/MyPayments';
+import { ContactProfile } from './pages/portal/ContactProfile';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: ('ADMIN' | 'ACCOUNTANT' | 'CONTACT')[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  allowedRoles,
+}) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-emerald-400">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold tracking-wider uppercase">Loading Urban Furniture...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const userRole = (user.role || 'ACCOUNTANT').toUpperCase() as 'ADMIN' | 'ACCOUNTANT' | 'CONTACT';
+
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    // If Contact tries to access staff routes, redirect to /my-invoices
+    if (userRole === 'CONTACT') {
+      return <Navigate to="/my-invoices" replace />;
+    }
+    // If Accountant tries to access Admin route, redirect to /dashboard
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
+};
+
+const DefaultRedirect: React.FC = () => {
+  const { user } = useAuth();
+  const role = user?.role?.toUpperCase();
+  if (role === 'CONTACT') {
+    return <Navigate to="/my-invoices" replace />;
+  }
+  return <Navigate to="/dashboard" replace />;
 };
 
 export const App: React.FC = () => {
@@ -68,59 +117,322 @@ export const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 >
-                  <Route index element={<Navigate to="/dashboard" replace />} />
-                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route index element={<DefaultRedirect />} />
 
-                  {/* Contacts */}
-                  <Route path="contacts" element={<ContactsList />} />
-                  <Route path="contacts/new" element={<ContactsList />} />
-                  <Route path="contacts/:id" element={<ContactDetail />} />
+                  {/* Dashboard - ADMIN & ACCOUNTANT ONLY */}
+                  <Route
+                    path="dashboard"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* User Management - ADMIN ONLY */}
+                  <Route
+                    path="users"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <UserManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Contact Portal Views - Strictly CONTACT Only */}
+                  <Route
+                    path="my-invoices"
+                    element={
+                      <ProtectedRoute allowedRoles={['CONTACT']}>
+                        <MyInvoices />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="my-bills"
+                    element={
+                      <ProtectedRoute allowedRoles={['CONTACT']}>
+                        <MyBills />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="my-payments"
+                    element={
+                      <ProtectedRoute allowedRoles={['CONTACT']}>
+                        <MyPayments />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="profile"
+                    element={
+                      <ProtectedRoute allowedRoles={['CONTACT', 'ADMIN', 'ACCOUNTANT']}>
+                        <ContactProfile />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Master Data - Contacts */}
+                  <Route
+                    path="contacts"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <ContactsList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="contacts/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <ContactsList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="contacts/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <ContactDetail />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Products */}
-                  <Route path="products" element={<ProductsList />} />
-                  <Route path="products/new" element={<ProductsList />} />
+                  <Route
+                    path="products"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <ProductsList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="products/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <ProductsList />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Chart of Accounts & Journals */}
-                  <Route path="accounts" element={<ChartOfAccounts />} />
-                  <Route path="accounts/new" element={<ChartOfAccounts />} />
-                  <Route path="journals" element={<Journals />} />
-                  <Route path="journals/:id" element={<JournalEntryDetail />} />
+                  <Route
+                    path="accounts"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <ChartOfAccounts />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="accounts/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <ChartOfAccounts />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="journals"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <Journals />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="journals/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <JournalEntryDetail />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Sales Orders & Customer Invoices */}
-                  <Route path="sales-orders" element={<SalesOrdersList />} />
-                  <Route path="sales-orders/new" element={<CreateSalesOrder />} />
-                  <Route path="sales-orders/:id" element={<SalesOrderDetail />} />
-                  <Route path="invoices" element={<InvoicesList />} />
-                  <Route path="invoices/new" element={<CreateSalesOrder />} />
-                  <Route path="invoices/:id" element={<InvoiceDetail />} />
+                  <Route
+                    path="sales-orders"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <SalesOrdersList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="sales-orders/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <CreateSalesOrder />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="sales-orders/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <SalesOrderDetail />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="invoices"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <InvoicesList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="invoices/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <CreateSalesOrder />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="invoices/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <InvoiceDetail />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Purchase Orders & Vendor Bills */}
-                  <Route path="purchase-orders" element={<PurchaseOrdersList />} />
-                  <Route path="purchase-orders/new" element={<CreatePurchaseOrder />} />
-                  <Route path="purchase-orders/:id" element={<PurchaseOrderDetail />} />
-                  <Route path="vendor-bills" element={<VendorBillsList />} />
-                  <Route path="vendor-bills/:id" element={<VendorBillDetail />} />
+                  <Route
+                    path="purchase-orders"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <PurchaseOrdersList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="purchase-orders/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <CreatePurchaseOrder />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="purchase-orders/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <PurchaseOrderDetail />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="vendor-bills"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <VendorBillsList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="vendor-bills/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <VendorBillDetail />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Payments Register */}
-                  <Route path="payments" element={<PaymentsList />} />
-                  <Route path="payments/new" element={<RecordPayment />} />
-                  <Route path="payments/:id" element={<PaymentsList />} />
+                  <Route
+                    path="payments"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <PaymentsList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="payments/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <RecordPayment />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="payments/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <PaymentsList />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Analytics & Budgets */}
-                  <Route path="analytic-accounts" element={<AnalyticAccounts />} />
-                  <Route path="budgets" element={<BudgetsList />} />
-                  <Route path="budgets/new" element={<BudgetsList />} />
+                  <Route
+                    path="analytic-accounts"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <AnalyticAccounts />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="budgets"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <BudgetsList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="budgets/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <BudgetsList />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Reports */}
-                  <Route path="reports/profit-loss" element={<ProfitLossReport />} />
-                  <Route path="reports/balance-sheet" element={<BalanceSheetReport />} />
-                  <Route path="reports/budget" element={<BudgetReport />} />
+                  <Route
+                    path="reports/profit-loss"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <ProfitLossReport />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="reports/balance-sheet"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <BalanceSheetReport />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="reports/budget"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <BudgetReport />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Settings */}
-                  <Route path="settings" element={<Settings />} />
+                  <Route
+                    path="settings"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <Settings />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Fallback */}
-                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="*" element={<DefaultRedirect />} />
                 </Route>
               </Routes>
             </BrowserRouter>

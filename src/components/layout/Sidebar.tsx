@@ -21,8 +21,11 @@ import {
   Armchair,
   Hammer,
   Ruler,
-  Wrench,
+  ShieldAlert,
+  UserCheck,
+  UserCheck2,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -44,57 +47,92 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
   onCloseMobile,
 }) => {
-  const navSections: NavSection[] = [
-    {
-      items: [
-        { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="w-4 h-4 shrink-0" /> },
-      ],
-    },
-    {
-      title: 'MASTER DATA',
-      items: [
-        { label: 'Contacts & Clients', path: '/contacts', icon: <Users className="w-4 h-4 shrink-0" /> },
-        { label: 'Products & Furniture', path: '/products', icon: <Package className="w-4 h-4 shrink-0" /> },
-        { label: 'Chart of Accounts', path: '/accounts', icon: <BookOpen className="w-4 h-4 shrink-0" /> },
-        { label: 'Journals', path: '/journals', icon: <Receipt className="w-4 h-4 shrink-0" /> },
-      ],
-    },
-    {
-      title: 'SALES & ORDERS',
-      items: [
-        { label: 'Sales Orders', path: '/sales-orders', icon: <ShoppingCart className="w-4 h-4 shrink-0" /> },
-        { label: 'Customer Invoices', path: '/invoices', icon: <FileCheck className="w-4 h-4 shrink-0" /> },
-      ],
-    },
-    {
-      title: 'PROCUREMENT',
-      items: [
-        { label: 'Purchase Orders', path: '/purchase-orders', icon: <Building2 className="w-4 h-4 shrink-0" /> },
-        { label: 'Vendor Bills', path: '/vendor-bills', icon: <FileText className="w-4 h-4 shrink-0" /> },
-      ],
-    },
-    {
-      title: 'FINANCE & WORKSHOP',
-      items: [
-        { label: 'Payments Register', path: '/payments', icon: <CreditCard className="w-4 h-4 shrink-0" /> },
-        { label: 'Analytic Accounts', path: '/analytic-accounts', icon: <PieChart className="w-4 h-4 shrink-0" /> },
-        { label: 'Budgets', path: '/budgets', icon: <Target className="w-4 h-4 shrink-0" /> },
-      ],
-    },
-    {
-      title: 'FINANCIAL REPORTS',
-      items: [
-        { label: 'Profit & Loss', path: '/reports/profit-loss', icon: <BarChart3 className="w-4 h-4 shrink-0" /> },
-        { label: 'Balance Sheet', path: '/reports/balance-sheet', icon: <Scale className="w-4 h-4 shrink-0" /> },
-        { label: 'Budget Report', path: '/reports/budget', icon: <PieChart className="w-4 h-4 shrink-0" /> },
-      ],
-    },
-    {
-      items: [
-        { label: 'Settings', path: '/settings', icon: <SlidersHorizontal className="w-4 h-4 shrink-0" /> },
-      ],
-    },
-  ];
+  const { user } = useAuth();
+  const role = user?.role?.toUpperCase() || 'ACCOUNTANT';
+
+  // Build role-specific navigation structure
+  let navSections: NavSection[] = [];
+
+  if (role === 'CONTACT') {
+    // Highly restricted Contact Portal Navigation
+    navSections = [
+      {
+        title: 'CLIENT PORTAL',
+        items: [
+          { label: 'My Invoices', path: '/my-invoices', icon: <FileCheck className="w-4 h-4 shrink-0 text-emerald-500" /> },
+          { label: 'My Bills', path: '/my-bills', icon: <FileText className="w-4 h-4 shrink-0 text-blue-400" /> },
+          { label: 'My Payments', path: '/my-payments', icon: <CreditCard className="w-4 h-4 shrink-0 text-amber-400" /> },
+          { label: 'Client Profile', path: '/profile', icon: <UserCheck2 className="w-4 h-4 shrink-0 text-purple-400" /> },
+        ],
+      },
+    ];
+  } else {
+    // Admin & Accountant Navigation
+    navSections = [
+      {
+        items: [
+          { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="w-4 h-4 shrink-0" /> },
+        ],
+      },
+      {
+        title: 'MASTER DATA',
+        items: [
+          { label: 'Contacts & Clients', path: '/contacts', icon: <Users className="w-4 h-4 shrink-0" /> },
+          { label: 'Products & Furniture', path: '/products', icon: <Package className="w-4 h-4 shrink-0" /> },
+          { label: 'Chart of Accounts', path: '/accounts', icon: <BookOpen className="w-4 h-4 shrink-0" /> },
+          { label: 'Journals', path: '/journals', icon: <Receipt className="w-4 h-4 shrink-0" /> },
+        ],
+      },
+      {
+        title: 'SALES & ORDERS',
+        items: [
+          { label: 'Sales Orders', path: '/sales-orders', icon: <ShoppingCart className="w-4 h-4 shrink-0" /> },
+          { label: 'Customer Invoices', path: '/invoices', icon: <FileCheck className="w-4 h-4 shrink-0" /> },
+        ],
+      },
+      {
+        title: 'PROCUREMENT',
+        items: [
+          { label: 'Purchase Orders', path: '/purchase-orders', icon: <Building2 className="w-4 h-4 shrink-0" /> },
+          { label: 'Vendor Bills', path: '/vendor-bills', icon: <FileText className="w-4 h-4 shrink-0" /> },
+        ],
+      },
+      {
+        title: 'FINANCE & WORKSHOP',
+        items: [
+          { label: 'Payments Register', path: '/payments', icon: <CreditCard className="w-4 h-4 shrink-0" /> },
+          { label: 'Analytic Accounts', path: '/analytic-accounts', icon: <PieChart className="w-4 h-4 shrink-0" /> },
+          { label: 'Budgets', path: '/budgets', icon: <Target className="w-4 h-4 shrink-0" /> },
+        ],
+      },
+      {
+        title: 'FINANCIAL REPORTS',
+        items: [
+          { label: 'Profit & Loss', path: '/reports/profit-loss', icon: <BarChart3 className="w-4 h-4 shrink-0" /> },
+          { label: 'Balance Sheet', path: '/reports/balance-sheet', icon: <Scale className="w-4 h-4 shrink-0" /> },
+          { label: 'Budget Report', path: '/reports/budget', icon: <PieChart className="w-4 h-4 shrink-0" /> },
+        ],
+      },
+    ];
+
+    // Admin-only sections
+    if (role === 'ADMIN') {
+      navSections.push({
+        title: 'SYSTEM ADMINISTRATION',
+        items: [
+          { label: 'User Management', path: '/users', icon: <ShieldAlert className="w-4 h-4 shrink-0 text-emerald-400" /> },
+          { label: 'Settings', path: '/settings', icon: <SlidersHorizontal className="w-4 h-4 shrink-0" /> },
+        ],
+      });
+    } else {
+      // Accountant only gets Settings (no User Management)
+      navSections.push({
+        items: [
+          { label: 'Settings', path: '/settings', icon: <SlidersHorizontal className="w-4 h-4 shrink-0" /> },
+        ],
+      });
+    }
+  }
 
   return (
     <aside
@@ -111,14 +149,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           {!isCollapsed && (
             <div className="flex flex-col truncate">
-              <span className="font-extrabold text-slate-900 dark:text-white tracking-tight text-base leading-tight">Urban Furniture</span>
+              <span className="font-extrabold text-slate-900 dark:text-white tracking-tight text-base leading-tight">
+                Urban Furniture
+              </span>
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold tracking-wider uppercase flex items-center gap-1">
-                <Ruler className="w-3 h-3" /> CAD & Accounting
+                <Ruler className="w-3 h-3" />
+                {role === 'CONTACT' ? 'Client Portal' : 'CAD & Accounting'}
               </span>
             </div>
           )}
         </div>
       </div>
+
+      {/* Role Indicator Banner */}
+      {!isCollapsed && (
+        <div className="mx-3 mt-3 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-navy-800/80 border border-slate-200 dark:border-navy-700 flex items-center justify-between text-[11px]">
+          <span className="text-slate-400 font-semibold">Access Role:</span>
+          <span
+            className={`font-bold px-1.5 py-0.5 rounded text-[10px] ${
+              role === 'ADMIN'
+                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                : role === 'ACCOUNTANT'
+                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+            }`}
+          >
+            {role}
+          </span>
+        </div>
+      )}
 
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
@@ -150,30 +209,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ))}
       </div>
-
-      {/* Embedded Hammer & Carpentry Diagram Mini Badge */}
-      {!isCollapsed && (
-        <div className="mx-3 mb-3 p-3 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
-            <span className="flex items-center gap-1.5">
-              <Hammer className="w-4 h-4 text-emerald-600" /> Hammer Tools
-            </span>
-            <span className="text-[10px] text-emerald-600 font-extrabold bg-emerald-100 dark:bg-emerald-950 px-1.5 py-0.5 rounded">
-              Ready
-            </span>
-          </div>
-          {/* Mini SVG Hammer Diagram */}
-          <div className="bg-slate-900 rounded-lg p-2 flex items-center justify-center">
-            <svg viewBox="0 0 160 40" className="w-full h-8 text-emerald-400">
-              <rect x="20" y="12" width="40" height="16" rx="2" fill="#3B82F6" opacity="0.4" stroke="#60A5FA" strokeWidth="1" />
-              <rect x="60" y="17" width="80" height="6" rx="2" fill="#D97706" />
-              <text x="100" y="32" fill="#34D399" fontSize="8" textAnchor="middle" fontFamily="monospace">
-                🔨 16oz Mallet
-              </text>
-            </svg>
-          </div>
-        </div>
-      )}
 
       {/* Collapse Toggle Footer */}
       <div className="p-3 border-t border-slate-200 dark:border-navy-800 shrink-0 hidden md:block">

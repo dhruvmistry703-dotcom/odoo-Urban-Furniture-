@@ -216,12 +216,16 @@ export interface Budget {
   status: 'active' | 'exceeded' | 'closed';
 }
 
+export type UserRole = 'ADMIN' | 'ACCOUNTANT' | 'CONTACT';
+
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Accountant' | 'Manager';
-  avatar: string;
+  role: UserRole | string;
+  contactId?: string | null;
+  avatar?: string;
+  isActive?: boolean;
 }
 
 export interface ToastMessage {
