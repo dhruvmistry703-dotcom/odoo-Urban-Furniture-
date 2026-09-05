@@ -18,6 +18,7 @@ import { ChartOfAccounts } from './pages/accounting/ChartOfAccounts';
 import { Journals } from './pages/accounting/Journals';
 import { JournalEntryDetail } from './pages/accounting/JournalEntryDetail';
 import { AnalyticAccounts } from './pages/accounting/AnalyticAccounts';
+import { AnalyticAccountForm } from './pages/accounting/AnalyticAccountForm';
 
 import { SalesOrdersList } from './pages/sales/SalesOrdersList';
 import { CreateSalesOrder } from './pages/sales/CreateSalesOrder';
@@ -37,6 +38,7 @@ import { PaymentsList } from './pages/payments/PaymentsList';
 import { RecordPayment } from './pages/payments/RecordPayment';
 
 import { BudgetsList } from './pages/budgets/BudgetsList';
+import { BudgetDetail } from './pages/budgets/BudgetDetail';
 
 import { ProfitLossReport } from './pages/reports/ProfitLossReport';
 import { BalanceSheetReport } from './pages/reports/BalanceSheetReport';
@@ -386,6 +388,22 @@ export const App: React.FC = () => {
                     }
                   />
                   <Route
+                    path="analytic-accounts/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <AnalyticAccountForm />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="analytic-accounts/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <AnalyticAccountForm />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="budgets"
                     element={
                       <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
@@ -398,6 +416,14 @@ export const App: React.FC = () => {
                     element={
                       <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
                         <BudgetsList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="budgets/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <BudgetDetail />
                       </ProtectedRoute>
                     }
                   />
