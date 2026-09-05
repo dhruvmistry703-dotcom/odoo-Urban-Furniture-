@@ -25,7 +25,7 @@ dotenv.config();
 
 const app = express();
 
-// Enable CORS with credentials for all origins (local and LAN network computers)
+// Allow local development hosts, including the Vite LAN address.
 app.use(
   cors({
     origin: (origin, callback) => {

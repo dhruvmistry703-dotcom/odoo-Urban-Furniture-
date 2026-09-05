@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import path from 'path';
 import dotenv from 'dotenv';
 import dns from 'node:dns';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // Ensure .env is loaded from project root
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });

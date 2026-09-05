@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   DollarSign,
   PieChart as PieChartIcon,
+  Download,
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
@@ -26,6 +27,7 @@ import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../services/api';
 import { Budget, AnalyticAccount, BudgetStatus } from '../../types';
+import { exportBudgetReportPdf } from '../../utils/reportPdf';
 
 // Mini Pie Chart component that renders two slices: Achieved (Cyan/Blue) and Balance (Coral/Red)
 interface MiniPieChartProps {
@@ -435,6 +437,17 @@ export const BudgetReport: React.FC = () => {
           <p className="text-xs text-slate-500">
             Click on any budget row or card to open the form/review view.
           </p>
+          <Button
+            variant="primary"
+            icon={<Download className="w-4 h-4" />}
+            onClick={() => {
+              exportBudgetReportPdf(filteredBudgets);
+              showToast({ type: 'info', title: 'Budget Report Exported', message: 'Budget PDF downloaded.' });
+            }}
+            disabled={loading || filteredBudgets.length === 0}
+          >
+            Export PDF
+          </Button>
         </div>
 
         {/* Mini Legend */}

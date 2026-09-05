@@ -21,6 +21,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.41.0",
     "mongoose": "^8.9.5",
     "postcss": "^8.5.28",

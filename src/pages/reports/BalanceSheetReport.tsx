@@ -5,6 +5,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { exportBalanceSheetPdf } from '../../utils/reportPdf';
 
 export const BalanceSheetReport: React.FC = () => {
   const { showToast } = useToast();
@@ -40,10 +41,11 @@ export const BalanceSheetReport: React.FC = () => {
   const isBalanced = Math.abs(totalAssets - totalLiabilitiesAndEquity) < 500000; // General accounting validation check
 
   const handleExportPDF = () => {
+    exportBalanceSheetPdf(report);
     showToast({
       type: 'info',
       title: 'Exporting Balance Sheet',
-      message: 'Generating Balance_Sheet_As_Of_30_Sep_2026.pdf...',
+      message: 'Balance Sheet PDF downloaded.',
     });
   };
 

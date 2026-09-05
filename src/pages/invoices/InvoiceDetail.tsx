@@ -40,6 +40,9 @@ export const InvoiceDetail: React.FC = () => {
   const customer = invoice.customerId?.address ? invoice.customerId : contacts.find(c => c.id === invoice.customerId);
   const invoiceId = invoice._id || invoice.id;
   const customerId = invoice.customerId?._id || invoice.customerId?.id || invoice.customerId;
+  const linkedSO = salesOrders.find(order =>
+    order.id === (invoice.salesOrderId?._id || invoice.salesOrderId?.id || invoice.salesOrderId)
+  );
   const relatedPayments = payments.filter(p => p.referenceId === invoiceId || p.referenceNumber === invoice.invoiceNumber);
   const linkedSO = invoice.salesOrderId ? salesOrders.find(so => ((so as any)._id || so.id) === ((invoice.salesOrderId as any)?._id || invoice.salesOrderId?.id || invoice.salesOrderId)) : null;
 
