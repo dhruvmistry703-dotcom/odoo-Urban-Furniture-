@@ -46,7 +46,7 @@ export const MyInvoices: React.FC = () => {
     const userEmail = user?.email?.toLowerCase() || '';
 
     const filtered = contextInvoices.filter(i => {
-      const invCustomerId = typeof i.customerId === 'object' ? i.customerId?._id : i.customerId;
+      const invCustomerId = typeof i.customerId === 'object' ? (i.customerId as any)?._id : i.customerId;
       const matchesId = invCustomerId === targetContactId;
       const matchesName = userName && i.customerName?.toLowerCase().includes(userName);
       const matchesEmail = userEmail && (i as any).customerEmail?.toLowerCase() === userEmail;
