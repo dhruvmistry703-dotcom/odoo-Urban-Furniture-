@@ -174,6 +174,7 @@ export const api = {
     request(`/budgets/${id}/revise`, { method: 'POST', body: JSON.stringify(data) }),
   cancelBudget: (id: string) => request(`/budgets/${id}/cancel`, { method: 'PATCH' }),
   archiveBudget: (id: string) => request(`/budgets/${id}/archive`, { method: 'PATCH' }),
+  deleteBudget: (id: string) => request(`/budgets/${id}`, { method: 'DELETE' }),
 
   // Reports
   getProfitLoss: () => request('/reports/profit-loss'),

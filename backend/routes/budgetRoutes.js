@@ -8,6 +8,7 @@ import {
   confirmBudget,
   reviseBudget,
   cancelBudget,
+  deleteBudget,
 } from '../controllers/budgetController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -22,7 +23,8 @@ router.route('/')
 
 router.route('/:id')
   .get(authorizeRoles('ADMIN', 'ACCOUNTANT'), getBudgetById)
-  .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), updateBudget);
+  .put(authorizeRoles('ADMIN', 'ACCOUNTANT'), updateBudget)
+  .delete(authorizeRoles('ADMIN', 'ACCOUNTANT'), deleteBudget);
 
 router.get('/:id/transactions', authorizeRoles('ADMIN', 'ACCOUNTANT'), getBudgetTransactions);
 router.patch('/:id/confirm', authorizeRoles('ADMIN', 'ACCOUNTANT'), confirmBudget);

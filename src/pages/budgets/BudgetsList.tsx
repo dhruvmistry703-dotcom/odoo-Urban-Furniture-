@@ -14,6 +14,7 @@ import {
   User as UserIcon,
   PieChart,
   Percent,
+  Trash2,
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
@@ -262,6 +263,26 @@ export const BudgetsList: React.FC = () => {
     }
   };
 
+  const handleDeleteBudget = async (e: React.MouseEvent, budgetId: string, name: string) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to permanently delete budget '${name}'?`)) return;
+    try {
+      await api.deleteBudget(budgetId);
+      showToast({
+        type: 'success',
+        title: 'Budget Deleted',
+        message: `Budget '${name}' has been deleted.`,
+      });
+      fetchBudgetsAndDependencies();
+    } catch (err: any) {
+      showToast({
+        type: 'error',
+        title: 'Delete Failed',
+        message: err.message || 'Could not delete budget',
+      });
+    }
+  };
+
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '—';
     try {
@@ -291,7 +312,7 @@ export const BudgetsList: React.FC = () => {
         return <Badge variant="danger">Cancelled</Badge>;
       case 'NEW':
       default:
-        return <Badge variant="default">Draft (New)</Badge>;
+        return <Badge variant="default">Draft</Badge>;
     }
   };
 
@@ -350,7 +371,7 @@ export const BudgetsList: React.FC = () => {
           <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-2">
             {formatCurrency(totalPlanned)}
           </h3>
-          <p className="mt-1 text-[11px] text-slate-500">Across {budgets.length} configured budgets</p>
+          <p className="mt-1 text-[11px] text-slate-500 truncate">Across {budgets.length} configured budgets</p>
         </Card>
 
         <Card className="border-l-4 border-l-blue-500">
@@ -361,7 +382,7 @@ export const BudgetsList: React.FC = () => {
           <h3 className="text-2xl font-extrabold text-blue-600 dark:text-blue-400 mt-2">
             {formatCurrency(totalActual)}
           </h3>
-          <p className="mt-1 text-[11px] text-slate-500">Actual financial expenditure</p>
+          <p className="mt-1 text-[11px] text-slate-500 truncate">Actual financial expenditure</p>
         </Card>
 
         <Card className="border-l-4 border-l-emerald-500">
@@ -372,23 +393,23 @@ export const BudgetsList: React.FC = () => {
           <h3 className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">
             {formatCurrency(totalRemaining)}
           </h3>
-          <p className="mt-1 text-[11px] text-slate-500">Unspent authorization</p>
+          <p className="mt-1 text-[11px] text-slate-500 truncate">Unspent authorization</p>
         </Card>
 
         <Card className="border-l-4 border-l-amber-500">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Achieved % / Utilization</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Utilization</span>
             <Percent className="w-4 h-4 text-amber-500" />
           </div>
           <h3 className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-2">
             {overallUtilization.toFixed(1)}%
           </h3>
-          <p className="mt-1 text-[11px] text-slate-500">Overall expenditure percentage</p>
+          <p className="mt-1 text-[11px] text-slate-500 truncate">Overall expenditure percentage</p>
         </Card>
       </div>
 
       {/* Filter and Search Bar */}
-      <Card noPadding>
+      <Card noPadding className="overflow-hidden">
         <div className="p-4 border-b border-slate-200 dark:border-navy-700 flex flex-col md:flex-row gap-3 items-center justify-between">
           <div className="relative w-full md:w-80">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -418,26 +439,24 @@ export const BudgetsList: React.FC = () => {
           </div>
         </div>
 
-        {/* Budget Table with Achieved Amount and Percentage */}
-        <div className="w-full min-w-0 overflow-x-auto">
-          <table className="w-full min-w-[960px] text-left text-xs table-auto">
+        {/* Budget Table with Single-line per entry, NO horizontal scrollbar */}
+        <div className="w-full">
+          <table className="w-full table-fixed text-left text-xs">
             <thead className="bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-navy-700 uppercase tracking-wider">
               <tr>
-                <th className="px-4 py-3.5 whitespace-nowrap text-left">Budget Title</th>
-                <th className="px-4 py-3.5 whitespace-nowrap">Analytic Center</th>
-                <th className="px-4 py-3.5">Period (Dates)</th>
-                <th className="px-4 py-3.5">Responsible Person</th>
-                <th className="px-4 py-3.5 text-right">Planned (Committed)</th>
-                <th className="px-4 py-3.5 text-right">Achieved Amount</th>
-                <th className="px-4 py-3.5 min-w-[140px]">Achieved %</th>
-                <th className="px-4 py-3.5 text-center">Status</th>
-                <th className="px-4 py-3.5 text-right">Actions</th>
+                <th className="w-[24%] px-3 py-3 text-left">Budget Title</th>
+                <th className="w-[18%] px-3 py-3 text-left">Analytic Center</th>
+                <th className="w-[14%] px-2 py-3 text-left">Period</th>
+                <th className="w-[12%] px-2 py-3 text-right">Committed</th>
+                <th className="w-[11%] px-2 py-3 text-right">Achieved</th>
+                <th className="w-[7%] px-2 py-3 text-center">Status</th>
+                <th className="w-[14%] px-3 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-navy-700/60">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center gap-2">
                       <RefreshCw className="w-5 h-5 animate-spin text-emerald-500" />
                       <span>Loading budget records...</span>
@@ -446,11 +465,10 @@ export const BudgetsList: React.FC = () => {
                 </tr>
               ) : filteredBudgets.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center gap-2">
                       <Target className="w-8 h-8 text-slate-400" />
                       <p className="font-semibold text-slate-600 dark:text-slate-300">No budgets found</p>
-                      <p className="text-xs text-slate-400">Create a budget allocation or adjust search filters.</p>
                       <Button variant="primary" size="sm" onClick={() => setIsModalOpen(true)} className="mt-2">
                         Create New Budget
                       </Button>
@@ -464,7 +482,6 @@ export const BudgetsList: React.FC = () => {
                   const isConfirmed = b.status === 'CONFIRMED';
                   const isRevised = b.status === 'REVISED';
                   const isCancelled = b.status === 'CANCELLED';
-                  const utilPercent = Number(b.utilization) || (b.planned > 0 ? (Number(b.actual || 0) / Number(b.planned)) * 100 : 0);
 
                   const anaObj = typeof b.analyticAccountId === 'object' ? (b.analyticAccountId as AnalyticAccount) : null;
                   const anaName = anaObj?.name || b.analyticAccountName || 'General Center';
@@ -472,68 +489,59 @@ export const BudgetsList: React.FC = () => {
                   return (
                     <tr
                       key={bId}
-                      className="hover:bg-slate-50/80 dark:hover:bg-navy-700/40 transition-colors cursor-pointer"
+                      className="hover:bg-slate-50/80 dark:hover:bg-navy-700/40 transition-colors cursor-pointer group"
                       onClick={() => navigate(`/budgets/${bId}`)}
                     >
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white min-w-0">
+                      {/* Budget Title in 1 line */}
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2 min-w-0">
                           <Target className="w-4 h-4 text-emerald-500 shrink-0" />
-                          <div className="min-w-0">
-                            <span className="truncate block">{b.name}</span>
-                            {b.revisions && b.revisions.length > 0 && (
-                              <span className="ml-2 inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                                Rev #{b.revisions.length}
-                              </span>
-                            )}
-                          </div>
+                          <span className="font-bold text-slate-900 dark:text-white truncate" title={b.name}>
+                            {b.name}
+                          </span>
+                          {b.revisions && b.revisions.length > 0 && (
+                            <span className="shrink-0 inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                              v{b.revisions.length + 1}
+                            </span>
+                          )}
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 font-medium text-slate-700 dark:text-slate-300">
+
+                      {/* Analytic Center in 1 line */}
+                      <td className="px-3 py-2.5 text-slate-700 dark:text-slate-300 truncate font-medium" title={anaName}>
                         {anaName}
                       </td>
-                      <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
+
+                      {/* Period in 1 line */}
+                      <td className="px-2 py-2.5 text-slate-500 font-mono text-[11px] truncate">
                         {formatDate(b.startDate)} - {formatDate(b.endDate)}
                       </td>
-                      <td className="px-4 py-3.5 text-slate-600 dark:text-slate-400">
-                        {b.responsiblePersonName || 'Business Owner'}
-                      </td>
-                      <td className="px-4 py-3.5 text-right font-bold text-slate-900 dark:text-white">
+
+                      {/* Committed Amount */}
+                      <td className="px-2 py-2.5 text-right font-bold text-slate-900 dark:text-white truncate">
                         {formatCurrency(b.planned)}
                       </td>
-                      <td className="px-4 py-3.5 text-right font-bold text-blue-600 dark:text-blue-400">
+
+                      {/* Achieved Amount */}
+                      <td className="px-2 py-2.5 text-right font-bold text-blue-600 dark:text-blue-400 truncate">
                         {formatCurrency(b.actual || 0)}
                       </td>
-                      <td className="px-4 py-3.5">
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[11px] font-bold">
-                            <span className="text-slate-700 dark:text-slate-300">{utilPercent.toFixed(1)}%</span>
-                          </div>
-                          <div className="w-full bg-slate-200 dark:bg-navy-700 h-2 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full transition-all ${
-                                utilPercent > 100
-                                  ? 'bg-rose-500'
-                                  : utilPercent > 80
-                                  ? 'bg-amber-500'
-                                  : 'bg-emerald-500'
-                              }`}
-                              style={{ width: `${Math.min(100, utilPercent)}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-center">
+
+                      {/* Status */}
+                      <td className="px-2 py-2.5 text-center">
                         {getStatusBadge(b.status)}
                       </td>
-                      <td className="px-4 py-3.5 text-right" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1.5">
+
+                      {/* Actions */}
+                      <td className="px-3 py-2.5 text-right" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="secondary"
                             size="sm"
                             onClick={() => navigate(`/budgets/${bId}`)}
                             title="Review Details"
                           >
-                            <Eye className="w-3.5 h-3.5 mr-1" /> Review
+                            <Eye className="w-3.5 h-3.5" />
                           </Button>
 
                           {isNewStage && (
@@ -543,7 +551,7 @@ export const BudgetsList: React.FC = () => {
                               onClick={() => handleConfirm(bId!)}
                               title="Confirm Budget"
                             >
-                              <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Confirm
+                              <CheckCircle2 className="w-3.5 h-3.5" />
                             </Button>
                           )}
 
@@ -554,20 +562,17 @@ export const BudgetsList: React.FC = () => {
                               onClick={() => openReviseModal(b)}
                               title="Revise Budget Allocation"
                             >
-                              <FileEdit className="w-3.5 h-3.5 mr-1" /> Revise
+                              <FileEdit className="w-3.5 h-3.5" />
                             </Button>
                           )}
 
-                          {!isCancelled && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCancel(bId!)}
-                              title="Cancel Budget"
-                            >
-                              <XCircle className="w-3.5 h-3.5 text-rose-500" />
-                            </Button>
-                          )}
+                          <button
+                            onClick={e => bId && handleDeleteBudget(e, bId, b.name)}
+                            title="Delete Budget"
+                            className="p-1 text-slate-400 hover:text-rose-600 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
