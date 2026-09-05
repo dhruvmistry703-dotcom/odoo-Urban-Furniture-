@@ -5,13 +5,14 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { LifecycleStepper, StepItem } from '../../components/common/LifecycleStepper';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
 
 export const InvoiceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { invoices, payments, contacts } = useData();
+  const { invoices, payments, contacts, salesOrders } = useData();
   const { showToast } = useToast();
 
   const invoice = invoices.find(i => i.id === id);
@@ -26,7 +27,24 @@ export const InvoiceDetail: React.FC = () => {
   }
 
   const customer = contacts.find(c => c.id === invoice.customerId);
+  const linkedSO = salesOrders.find(s => s.id === invoice.salesOrderId || s.invoiceId === invoice.id);
   const relatedPayments = payments.filter(p => p.referenceId === invoice.id || p.referenceNumber === invoice.invoiceNumber);
+
+  const steps: StepItem[] = [
+    { label: 'Sales Order', isDone: !!linkedSO, refCode: linkedSO ? linkedSO.orderNumber : 'Direct Invoice' },
+    { label: 'Customer Invoice', isDone: true, refCode: invoice.invoiceNumber, isCurrent: invoice.outstandingAmount > 0 },
+    {
+      label: 'Payment Register',
+      isDone: invoice.status === 'paid' || relatedPayments.length > 0,
+      refCode: relatedPayments.length > 0 ? relatedPayments[0].paymentNumber : undefined,
+      isCurrent: invoice.outstandingAmount > 0 && invoice.paidAmount > 0,
+    },
+    {
+      label: 'Accounting Entry',
+      isDone: invoice.status === 'paid' || relatedPayments.some(p => !!p.journalEntryId),
+      refCode: relatedPayments.find(p => !!p.journalEntryId)?.journalEntryId ? 'JE Posted' : 'JE Posted',
+    },
+  ];
 
   const handleDownloadPDF = () => {
     showToast({
@@ -63,6 +81,9 @@ export const InvoiceDetail: React.FC = () => {
         breadcrumbs={[{ label: 'Invoices', href: '/invoices' }, { label: invoice.invoiceNumber }]}
       />
 
+      {/* Connected Transaction Timeline */}
+      <LifecycleStepper steps={steps} />
+
       {/* Printable Invoice Header Card */}
       <Card className="p-8 border-2 border-slate-200 dark:border-navy-700">
         {/* Brand & Invoice Header */}
@@ -83,6 +104,11 @@ export const InvoiceDetail: React.FC = () => {
               <Badge status={invoice.status} />
             </div>
             <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-1">{invoice.invoiceNumber}</p>
+            {linkedSO && (
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold cursor-pointer hover:underline" onClick={() => navigate(`/sales-orders/${linkedSO.id}`)}>
+                Linked SO: {linkedSO.orderNumber}
+              </p>
+            )}
             <p className="text-xs text-slate-500">Invoice Date: {invoice.invoiceDate}</p>
             <p className="text-xs text-slate-500">Due Date: {invoice.dueDate}</p>
           </div>
