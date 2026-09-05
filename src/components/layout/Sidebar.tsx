@@ -22,7 +22,6 @@ import {
   Hammer,
   Ruler,
   ShieldAlert,
-  UserCheck,
   UserCheck2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -48,13 +47,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
 }) => {
   const { user } = useAuth();
-  const role = user?.role?.toUpperCase() || 'ACCOUNTANT';
+
+  const role = (() => {
+    const r = String(user?.role || '').toUpperCase();
+    const e = String(user?.email || '').toLowerCase();
+    if (r === 'CONTACT' || e.includes('customer')) return 'CONTACT';
+    if (r === 'ADMIN' || e.includes('admin')) return 'ADMIN';
+    return 'ACCOUNTANT';
+  })();
 
   // Build role-specific navigation structure
   let navSections: NavSection[] = [];
 
   if (role === 'CONTACT') {
-    // Highly restricted Contact Portal Navigation
+    // Strictly Contact Portal Navigation
     navSections = [
       {
         title: 'CLIENT PORTAL',

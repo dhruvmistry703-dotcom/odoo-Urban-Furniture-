@@ -139,8 +139,8 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
                 className="w-8 h-8 rounded-full object-cover ring-2 ring-amber-500/30"
               />
               <div className="hidden lg:flex flex-col text-left">
-                <span className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">{user?.name || 'John Doe'}</span>
-                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">{user?.role || 'Accountant'}</span>
+                <span className="text-xs font-semibold text-slate-900 dark:text-white leading-tight">{user?.name || 'User'}</span>
+                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">{user?.role || ''}</span>
               </div>
               <ChevronDown className="w-4 h-4 text-slate-400 hidden lg:block" />
             </button>

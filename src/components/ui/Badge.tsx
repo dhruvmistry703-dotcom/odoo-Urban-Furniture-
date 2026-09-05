@@ -14,41 +14,53 @@ export type BadgeVariant =
   | 'inactive'
   | 'customer'
   | 'vendor'
-  | 'both';
+  | 'both'
+  | 'primary'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'default';
 
 interface BadgeProps {
-  status: string;
-  variant?: BadgeVariant;
+  status?: string;
+  variant?: BadgeVariant | string;
+  children?: React.ReactNode;
   className?: string;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ status, variant, className = '' }) => {
-  const norm = (variant || status.toLowerCase().replace(' ', '_')) as BadgeVariant;
+export const Badge: React.FC<BadgeProps> = ({ status, variant, children, className = '' }) => {
+  const rawText = status || (typeof children === 'string' ? children : '') || (variant ? String(variant) : 'Active');
+  const norm = (variant || rawText).toLowerCase().replace(/[\s-]+/g, '_');
 
   const styles: Record<string, string> = {
     paid: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60',
+    success: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60',
     completed: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60',
     posted: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60',
     active: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60',
     
     pending: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800/60',
     partially_paid: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800/60',
+    warning: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800/60',
     confirmed: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/80 dark:text-blue-300 dark:border-blue-800/60',
+    primary: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/80 dark:text-blue-300 dark:border-blue-800/60',
     
     overdue: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800/60',
+    danger: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800/60',
     cancelled: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800/60',
     exceeded: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800/60',
     
     draft: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-navy-800 dark:text-slate-300 dark:border-navy-700',
     inactive: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-navy-800 dark:text-slate-300 dark:border-navy-700',
+    default: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-navy-800 dark:text-slate-300 dark:border-navy-700',
     
     customer: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-800/60',
     vendor: 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800/60',
     both: 'bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/80 dark:text-teal-300 dark:border-teal-800/60',
   };
 
-  const badgeStyle = styles[norm] || 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-navy-800 dark:text-slate-300';
-  const label = status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const badgeStyle = styles[norm] || styles.default;
+  const label = children || (status ? status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : rawText);
 
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border shadow-2xs ${badgeStyle} ${className}`}>

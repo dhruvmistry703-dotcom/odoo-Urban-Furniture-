@@ -283,59 +283,61 @@ export const ContactsList: React.FC = () => {
             onChange={e => setAddress(e.target.value)}
           />
 
-          {/* Create Login Account Section */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-900 border border-slate-200 dark:border-navy-700 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-emerald-500" /> Create Login Account
-                </label>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Provision a Contact Portal user account (Role: CONTACT)
-                </p>
+          {/* Create Login Account Section (Admin Only) */}
+          {isAdmin && (
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-navy-900 border border-slate-200 dark:border-navy-700 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <KeyRound className="w-3.5 h-3.5 text-emerald-500" /> Create Login Account
+                  </label>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Provision a Contact Portal user account (Role: CONTACT)
+                  </p>
+                </div>
+                <div className="flex items-center bg-slate-200 dark:bg-navy-800 p-1 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setCreateLoginAccount(false)}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                      !createLoginAccount
+                        ? 'bg-white dark:bg-navy-700 text-slate-800 dark:text-white shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+                    }`}
+                  >
+                    No
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCreateLoginAccount(true)}
+                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                      createLoginAccount
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+                    }`}
+                  >
+                    Yes
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center bg-slate-200 dark:bg-navy-800 p-1 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setCreateLoginAccount(false)}
-                  className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                    !createLoginAccount
-                      ? 'bg-white dark:bg-navy-700 text-slate-800 dark:text-white shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
-                  }`}
-                >
-                  No
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCreateLoginAccount(true)}
-                  className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                    createLoginAccount
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
-                  }`}
-                >
-                  Yes
-                </button>
-              </div>
-            </div>
 
-            {createLoginAccount && (
-              <div className="pt-2 border-t border-slate-200 dark:border-navy-700 space-y-2 animate-in fade-in duration-150">
-                <Input
-                  label="Contact User Password"
-                  type="password"
-                  required
-                  placeholder="Password for client portal login"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                />
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                  <Shield className="w-3 h-3" /> Account will have strict data isolation (only sees own invoices/bills).
-                </p>
-              </div>
-            )}
-          </div>
+              {createLoginAccount && (
+                <div className="pt-2 border-t border-slate-200 dark:border-navy-700 space-y-2 animate-in fade-in duration-150">
+                  <Input
+                    label="Contact User Password"
+                    type="password"
+                    required
+                    placeholder="Password for client portal login"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                  />
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                    <Shield className="w-3 h-3" /> Account will have strict data isolation (only sees own invoices/bills).
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-navy-700">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>

@@ -50,6 +50,15 @@ import { MyBills } from './pages/portal/MyBills';
 import { MyPayments } from './pages/portal/MyPayments';
 import { ContactProfile } from './pages/portal/ContactProfile';
 
+const getUserRole = (user: any): 'ADMIN' | 'ACCOUNTANT' | 'CONTACT' => {
+  if (!user) return 'ACCOUNTANT';
+  const r = String(user.role || '').toUpperCase();
+  const e = String(user.email || '').toLowerCase();
+  if (r === 'CONTACT' || e.includes('customer')) return 'CONTACT';
+  if (r === 'ADMIN' || e.includes('admin')) return 'ADMIN';
+  return 'ACCOUNTANT';
+};
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: ('ADMIN' | 'ACCOUNTANT' | 'CONTACT')[];
@@ -76,14 +85,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  const userRole = (user.role || 'ACCOUNTANT').toUpperCase() as 'ADMIN' | 'ACCOUNTANT' | 'CONTACT';
+  const userRole = getUserRole(user);
 
   if (allowedRoles && !allowedRoles.includes(userRole)) {
-    // If Contact tries to access staff routes, redirect to /my-invoices
     if (userRole === 'CONTACT') {
       return <Navigate to="/my-invoices" replace />;
     }
-    // If Accountant tries to access Admin route, redirect to /dashboard
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -92,7 +99,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
 const DefaultRedirect: React.FC = () => {
   const { user } = useAuth();
-  const role = user?.role?.toUpperCase();
+  const role = getUserRole(user);
   if (role === 'CONTACT') {
     return <Navigate to="/my-invoices" replace />;
   }

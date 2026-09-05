@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FileCheck, CreditCard, Shield, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FileCheck, CreditCard, Shield, RefreshCw, Check, Clock, AlertTriangle } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -27,7 +27,7 @@ export const MyInvoices: React.FC = () => {
   const [bankAccount, setBankAccount] = useState('HDFC NetBanking');
   const [isSubmittingPay, setIsSubmittingPay] = useState(false);
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     try {
       setLoading(true);
       const res = await api.getInvoices();
@@ -46,11 +46,11 @@ export const MyInvoices: React.FC = () => {
     );
     setInvoices(filtered);
     setLoading(false);
-  };
+  }, [user?.contactId, contextInvoices]);
 
   useEffect(() => {
     fetchInvoices();
-  }, [user, contextInvoices]);
+  }, [fetchInvoices]);
 
   const openPayModal = (inv: any) => {
     setSelectedInvoice(inv);
@@ -123,6 +123,11 @@ export const MyInvoices: React.FC = () => {
     }
   };
 
+  const totalBilled = invoices.reduce((sum, inv) => sum + (Number(inv.grandTotal) || 0), 0);
+  const totalPaid = invoices.reduce((sum, inv) => sum + (Number(inv.paidAmount) || 0), 0);
+  const totalOutstanding = invoices.reduce((sum, inv) => sum + (Number(inv.outstandingAmount) || 0), 0);
+  const pendingCount = invoices.filter(inv => inv.status !== 'paid').length;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -147,6 +152,53 @@ export const MyInvoices: React.FC = () => {
             <strong>Client Portal Data Isolation:</strong> Authenticated as <strong>{user?.name}</strong>. Strictly displaying only invoices issued to your client account.
           </span>
         </div>
+      </div>
+
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-amber-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Outstanding Balance</span>
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">
+            ₹{totalOutstanding.toLocaleString('en-IN')}
+          </p>
+          <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Due for settlement</p>
+        </Card>
+
+        <Card className="border-l-4 border-l-emerald-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Paid</span>
+            <Check className="w-4 h-4 text-emerald-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+            ₹{totalPaid.toLocaleString('en-IN')}
+          </p>
+          <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Cleared payments</p>
+        </Card>
+
+        <Card className="border-l-4 border-l-primary-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Invoiced</span>
+            <FileCheck className="w-4 h-4 text-primary-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+            ₹{totalBilled.toLocaleString('en-IN')}
+          </p>
+          <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Across {invoices.length} invoices</p>
+        </Card>
+
+        <Card className="border-l-4 border-l-purple-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unsettled Invoices</span>
+            <Clock className="w-4 h-4 text-purple-500" />
+          </div>
+          <p className="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">
+            {pendingCount}
+          </p>
+          <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Pending or partial</p>
+        </Card>
       </div>
 
       {/* Invoices Table Card */}

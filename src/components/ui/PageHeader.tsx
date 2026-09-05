@@ -3,16 +3,23 @@ import React from 'react';
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
+  description?: string;
   action?: React.ReactNode;
-  breadcrumbs?: { label: string; href?: string }[];
+  actions?: React.ReactNode;
+  breadcrumbs?: { label: string; href?: string; path?: string }[];
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,
+  description,
   action,
+  actions,
   breadcrumbs,
 }) => {
+  const displaySubtitle = subtitle || description;
+  const displayAction = action || actions;
+
   return (
     <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div>
@@ -29,9 +36,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </nav>
         )}
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{title}</h1>
-        {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{subtitle}</p>}
+        {displaySubtitle && <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{displaySubtitle}</p>}
       </div>
-      {action && <div className="flex items-center gap-3 shrink-0">{action}</div>}
+      {displayAction && <div className="flex items-center gap-3 shrink-0">{displayAction}</div>}
     </div>
   );
 };
