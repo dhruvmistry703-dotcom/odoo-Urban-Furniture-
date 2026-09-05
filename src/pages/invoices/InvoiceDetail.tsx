@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, CreditCard, Armchair } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -7,14 +7,25 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
+import { api } from '../../services/api';
 
 export const InvoiceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { invoices, payments, contacts } = useData();
+  const { invoices: localInvoices, payments, contacts } = useData();
   const { showToast } = useToast();
+  const [invoice, setInvoice] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const invoice = invoices.find(i => i.id === id);
+  useEffect(() => {
+    if (!id) return;
+    api.getInvoiceById(id)
+      .then(response => setInvoice(response.invoice))
+      .catch(error => showToast({ type: 'error', title: 'Unable to load invoice', message: error.message }))
+      .finally(() => setLoading(false));
+  }, [id, showToast]);
+
+  if (loading) return <div className="p-8 text-sm text-slate-500">Loading invoice from MongoDB...</div>;
 
   if (!invoice) {
     return (
@@ -25,8 +36,10 @@ export const InvoiceDetail: React.FC = () => {
     );
   }
 
-  const customer = contacts.find(c => c.id === invoice.customerId);
-  const relatedPayments = payments.filter(p => p.referenceId === invoice.id || p.referenceNumber === invoice.invoiceNumber);
+  const customer = invoice.customerId?.address ? invoice.customerId : contacts.find(c => c.id === invoice.customerId);
+  const invoiceId = invoice._id || invoice.id;
+  const customerId = invoice.customerId?._id || invoice.customerId?.id || invoice.customerId;
+  const relatedPayments = payments.filter(p => p.referenceId === invoiceId || p.referenceNumber === invoice.invoiceNumber);
 
   const handleDownloadPDF = () => {
     showToast({
@@ -53,7 +66,7 @@ export const InvoiceDetail: React.FC = () => {
               <Button
                 variant="primary"
                 icon={<CreditCard className="w-4 h-4" />}
-                onClick={() => navigate('/payments/new', { state: { invoiceId: invoice.id, contactId: invoice.customerId, amount: invoice.outstandingAmount, refNo: invoice.invoiceNumber } })}
+                onClick={() => navigate('/payments/new', { state: { invoiceId, contactId: customerId, amount: invoice.outstandingAmount, refNo: invoice.invoiceNumber } })}
               >
                 Record Payment
               </Button>
@@ -110,8 +123,8 @@ export const InvoiceDetail: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-navy-700">
-              {invoice.items.map(item => (
-                <tr key={item.id}>
+              {invoice.items.map((item: any) => (
+                <tr key={item._id || item.id}>
                   <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{item.productName}</td>
                   <td className="px-3 py-3 text-center">{item.quantity}</td>
                   <td className="px-3 py-3 text-right">₹{item.unitPrice.toLocaleString('en-IN')}</td>

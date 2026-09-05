@@ -58,6 +58,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (error) {
         console.warn('[AuthContext] Session restore note:', error);
+        removeToken();
+        setUser(null);
       } finally {
         setLoading(false);
       }

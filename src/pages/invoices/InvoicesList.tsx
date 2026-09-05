@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, Eye } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -7,13 +7,25 @@ import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { useData } from '../../context/DataContext';
+import { api } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 export const InvoicesList: React.FC = () => {
-  const { invoices } = useData();
+  const { invoices: localInvoices } = useData();
+  const { showToast } = useToast();
   const navigate = useNavigate();
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  useEffect(() => {
+    api.getInvoices()
+      .then(response => setInvoices(response.invoices || []))
+      .catch(error => showToast({ type: 'error', title: 'Unable to load invoices', message: error.message }))
+      .finally(() => setLoading(false));
+  }, [showToast]);
 
   const filtered = invoices.filter(inv => {
     const matchesQuery = inv.invoiceNumber.toLowerCase().includes(query.toLowerCase()) || inv.customerName.toLowerCase().includes(query.toLowerCase());
@@ -79,7 +91,7 @@ export const InvoicesList: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-navy-700/60">
               {filtered.map(inv => (
-                <tr key={inv.id} className="hover:bg-slate-50/80 dark:hover:bg-navy-700/40 transition-colors">
+                <tr key={inv._id || inv.id} className="hover:bg-slate-50/80 dark:hover:bg-navy-700/40 transition-colors">
                   <td className="px-4 py-3 font-extrabold text-slate-900 dark:text-white">{inv.invoiceNumber}</td>
                   <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">{inv.customerName}</td>
                   <td className="px-4 py-3 text-slate-500">{inv.invoiceDate}</td>
@@ -89,7 +101,7 @@ export const InvoicesList: React.FC = () => {
                   <td className="px-4 py-3 text-rose-600 font-semibold">₹{inv.outstandingAmount.toLocaleString('en-IN')}</td>
                   <td className="px-4 py-3"><Badge status={inv.status} /></td>
                   <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="sm" icon={<Eye className="w-3.5 h-3.5" />} onClick={() => navigate(`/invoices/${inv.id}`)}>
+                    <Button variant="ghost" size="sm" icon={<Eye className="w-3.5 h-3.5" />} onClick={() => navigate(`/invoices/${inv._id || inv.id}`)}>
                       View
                     </Button>
                   </td>
@@ -97,6 +109,8 @@ export const InvoicesList: React.FC = () => {
               ))}
             </tbody>
           </table>
+          {loading && <p className="p-6 text-center text-xs text-slate-500">Loading invoices from MongoDB...</p>}
+          {!loading && filtered.length === 0 && <p className="p-6 text-center text-xs text-slate-500">No invoices found.</p>}
         </div>
       </Card>
     </div>
