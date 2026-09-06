@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, Calendar, BarChart3 } from 'lucide-react';
+import { Download, Calendar } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -21,7 +21,13 @@ export const ProfitLossReport: React.FC = () => {
     setError('');
     const [from, to] = dateRange.split('|');
     api.getProfitLoss({ from, to })
-      .then(response => setReport(response.report))
+      .then(response => {
+        if (response && response.report) {
+          setReport(response.report);
+        } else {
+          setReport(response);
+        }
+      })
       .catch(error => {
         const message = error.message || 'The report API is unavailable.';
         setError(message);
@@ -43,19 +49,21 @@ export const ProfitLossReport: React.FC = () => {
     </div>
   );
 
-  const salesRevenue = report.totalIncome;
-  const totalIncome = report.totalIncome;
-  const totalExpenses = report.totalExpense;
-  const netProfit = report.netProfit;
-  const rawMaterialExpense = report.bills.reduce((sum: number, bill: any) => sum + (bill.subtotal || 0), 0);
-  const otherIncome = report.otherIncome;
-  const operatingExpenseAccounts = report.expenseAccounts.filter((account: any) => account.balance > 0);
+  const salesRevenue = report.totalIncome || 0;
+  const totalIncome = report.totalIncome || 0;
+  const totalExpenses = report.totalExpense || 0;
+  const netProfit = report.netProfit || 0;
+  const billsList = report.bills || [];
+  const rawMaterialExpense = billsList.reduce((sum: number, bill: any) => sum + (bill.subtotal || 0), 0);
+  const otherIncome = report.otherIncome || 0;
+  const expenseAccounts = report.expenseAccounts || [];
+  const operatingExpenseAccounts = expenseAccounts.filter((account: any) => (account.balance || 0) > 0);
 
   const chartData = [
     { category: 'Customer Invoices', Income: salesRevenue, Expense: 0 },
     { category: 'Other Income', Income: otherIncome, Expense: 0 },
     { category: 'Vendor Bills', Income: 0, Expense: rawMaterialExpense },
-    ...operatingExpenseAccounts.map((account: any) => ({ category: account.name, Income: 0, Expense: account.balance })),
+    ...operatingExpenseAccounts.map((account: any) => ({ category: account.name, Income: 0, Expense: account.balance || 0 })),
   ];
 
   const handleExportPDF = () => {
@@ -158,7 +166,7 @@ export const ProfitLossReport: React.FC = () => {
               </div>
               <div className="flex justify-between text-slate-700 dark:text-slate-300">
                 <span>Account-based operating expenses</span>
-                <span className="font-mono">₹{report.expenseAccounts.reduce((sum: number, account: any) => sum + account.balance, 0).toLocaleString('en-IN')}</span>
+                <span className="font-mono">₹{expenseAccounts.reduce((sum: number, account: any) => sum + (account.balance || 0), 0).toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between font-extrabold text-slate-900 dark:text-white pt-2 border-t border-slate-200 dark:border-navy-700 text-sm">
                 <span>TOTAL EXPENSES</span>

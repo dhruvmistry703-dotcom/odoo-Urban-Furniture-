@@ -7,7 +7,10 @@ export const authorizeRoles = (...allowedRoles) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = String(req.user.role).toUpperCase();
+    const allowed = allowedRoles.map(r => String(r).toUpperCase());
+
+    if (!allowed.includes(userRole)) {
       return res.status(403).json({
         success: false,
         message: `Role [${req.user.role}] does not have permission to perform this action.`,

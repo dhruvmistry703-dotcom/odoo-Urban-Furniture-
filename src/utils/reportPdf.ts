@@ -104,18 +104,32 @@ export const exportProfitLossPdf = (report: any, period: string) => {
 
 export const exportBalanceSheetPdf = (report: any) => {
   const doc = new jsPDF() as PdfDocument;
-  const account = (accounts: any[], code: string) => accounts?.find(item => item.code === code)?.balance || 0;
-  const cash = account(report.assetAccounts, '1001');
-  const bank = account(report.assetAccounts, '1002');
-  const inventory = account(report.assetAccounts, '1004');
-  const fixedAssets = 850000;
-  const totalAssets = cash + bank + report.accountsReceivable + inventory + fixedAssets;
-  const gstPayable = account(report.liabilityAccounts, '2002');
-  const totalLiabilities = report.accountsPayable + gstPayable;
-  const netProfit = report.totalIncome - report.totalExpense;
-  const totalEquity = report.totalCapital + netProfit;
+  const assetAccounts = report.assetAccounts || [];
+  const liabilityAccounts = report.liabilityAccounts || [];
+  const capitalAccounts = report.capitalAccounts || [];
 
-  addHeader(doc, 'STATEMENT OF FINANCIAL POSITION', 'As of 30 September 2026', [59, 130, 246]);
+  const accountsReceivable = report.accountsReceivable || 0;
+  const accountsPayable = report.accountsPayable || 0;
+
+  const totalAssets = assetAccounts.reduce((sum: number, a: any) => sum + (a.balance || 0), 0) + accountsReceivable;
+  const totalLiabilities = liabilityAccounts.reduce((sum: number, a: any) => sum + (a.balance || 0), 0) + accountsPayable;
+  const totalCapital = capitalAccounts.reduce((sum: number, a: any) => sum + (a.balance || 0), 0);
+  const netProfit = report.netProfit ?? ((report.totalIncome || 0) - (report.totalExpense || 0));
+  const totalEquity = totalCapital + netProfit;
+
+  const assetRows = [
+    ['Accounts Receivable', currency(accountsReceivable)],
+    ...assetAccounts.map((acc: any) => [acc.name, currency(acc.balance)]),
+  ];
+
+  const liabilityRows = [
+    ['Accounts Payable', currency(accountsPayable)],
+    ...liabilityAccounts.map((acc: any) => [acc.name, currency(acc.balance)]),
+    ...capitalAccounts.map((acc: any) => [acc.name, currency(acc.balance)]),
+    ['Current Net Operating Result', currency(netProfit)],
+  ];
+
+  addHeader(doc, 'STATEMENT OF FINANCIAL POSITION', 'Live Data from MongoDB Atlas', [59, 130, 246]);
   addSummary(doc, [
     { label: 'Total assets', value: currency(totalAssets), color: green },
     { label: 'Total liabilities', value: currency(totalLiabilities), color: [225, 29, 72] },
@@ -126,11 +140,7 @@ export const exportBalanceSheetPdf = (report: any) => {
     startY: 76,
     head: [['Assets', 'Amount']],
     body: [
-      ['Petty Cash', currency(cash)],
-      ['HDFC Bank Main Account', currency(bank)],
-      ['Accounts Receivable', currency(report.accountsReceivable)],
-      ['Inventory', currency(inventory)],
-      ['Fixed Assets', currency(fixedAssets)],
+      ...assetRows,
       [{ content: 'TOTAL ASSETS', styles: { fontStyle: 'bold' } }, { content: currency(totalAssets), styles: { fontStyle: 'bold' } }],
     ],
     theme: 'grid',
@@ -143,10 +153,7 @@ export const exportBalanceSheetPdf = (report: any) => {
     startY: (doc.lastAutoTable?.finalY || 76) + 12,
     head: [['Liabilities & Equity', 'Amount']],
     body: [
-      ['Accounts Payable', currency(report.accountsPayable)],
-      ['GST Payable', currency(gstPayable)],
-      ['Owner Capital', currency(report.totalCapital)],
-      ['Current Year Net Profit', currency(netProfit)],
+      ...liabilityRows,
       [{ content: 'TOTAL LIABILITIES & EQUITY', styles: { fontStyle: 'bold' } }, { content: currency(totalLiabilities + totalEquity), styles: { fontStyle: 'bold' } }],
     ],
     theme: 'grid',
@@ -155,7 +162,7 @@ export const exportBalanceSheetPdf = (report: any) => {
     columnStyles: { 1: { halign: 'right' } },
   });
 
-  finish(doc, 'balance-sheet-30-sep-2026.pdf');
+  finish(doc, 'balance-sheet-mongodb.pdf');
 };
 
 export const exportBudgetReportPdf = (budgets: any[]) => {

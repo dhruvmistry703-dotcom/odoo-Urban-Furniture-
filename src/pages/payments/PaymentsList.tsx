@@ -18,8 +18,8 @@ export const PaymentsList: React.FC = () => {
   const totalReceived = payments.filter(p => p.type === 'customer_payment').reduce((sum, p) => sum + p.amount, 0);
   const totalPaid = payments.filter(p => p.type === 'vendor_payment').reduce((sum, p) => sum + p.amount, 0);
 
-  const bankBalance = accounts.find(a => a.code === '1002')?.balance || 0;
-  const cashBalance = accounts.find(a => a.code === '1001')?.balance || 0;
+  const bankBalance = accounts.find(a => String(a.type).toLowerCase() === 'asset' && (a.name.toLowerCase().includes('bank') || a.code === '1002'))?.balance || 0;
+  const cashBalance = accounts.find(a => String(a.type).toLowerCase() === 'asset' && (a.name.toLowerCase().includes('cash') || a.code === '1001'))?.balance || 0;
 
   const filtered = payments.filter(p => {
     const matchesQuery = p.paymentNumber.toLowerCase().includes(query.toLowerCase()) || p.contactName.toLowerCase().includes(query.toLowerCase());

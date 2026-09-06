@@ -265,7 +265,7 @@ export const RecordPayment: React.FC = () => {
                 <Input
                   label="Cash Account"
                   disabled
-                  value="Petty Cash (Account 1001)"
+                  value="Workshop Petty Cash Account"
                 />
               )}
             </div>
