@@ -1,11 +1,13 @@
+import 'dotenv/config';
 import mongoose from 'mongoose';
+import path from 'path';
 import dotenv from 'dotenv';
 import dns from 'node:dns';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-dotenv.config({ path: resolve(projectRoot, '.env') });
+// Ensure .env is loaded from project root
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 export const connectDB = async () => {
   const mongoUri = process.env.MONGODB_URI;

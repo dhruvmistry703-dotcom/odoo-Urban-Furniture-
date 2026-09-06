@@ -9,6 +9,7 @@ import { Input } from '../../components/ui/Input';
 import { LineItemTable } from '../../components/transactions/LineItemTable';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
+import { api } from '../../services/api';
 import { LineItem } from '../../types';
 
 export const CreatePurchaseOrder: React.FC = () => {
@@ -44,29 +45,55 @@ export const CreatePurchaseOrder: React.FC = () => {
   const taxTotal = items.reduce((sum, item) => sum + item.taxAmount, 0);
   const grandTotal = subtotal + taxTotal;
 
-  const handleSubmit = () => {
-    const vendor = vendors.find(v => v.id === vendorId);
+  const handleSubmit = async () => {
+    const vendor = vendors.find(v => v.id === vendorId || (v as any)._id === vendorId);
     if (!vendor) {
       showToast({ type: 'error', title: 'Vendor Required', message: 'Please select a vendor.' });
       return;
     }
 
-    const newPO = createPurchaseOrder({
-      vendorId: vendor.id,
-      vendorName: vendor.name,
-      orderDate,
-      dueDate,
-      items,
-      notes,
-    });
+    try {
+      const res = await api.createPurchaseOrder({
+        vendorId: vendor.id || (vendor as any)._id,
+        vendorName: vendor.name,
+        orderDate,
+        dueDate,
+        items,
+        notes,
+      });
 
-    showToast({
-      type: 'success',
-      title: 'Purchase Order Issued',
-      message: `Purchase Order ${newPO.poNumber} confirmed with ${newPO.vendorName}.`,
-    });
+      const createdPO = res?.purchaseOrder;
+      const targetId = createdPO?._id || createdPO?.id;
 
-    navigate(`/purchase-orders/${newPO.id}`);
+      showToast({
+        type: 'success',
+        title: 'Purchase Order Issued',
+        message: `Purchase Order ${createdPO?.poNumber || ''} confirmed with ${createdPO?.vendorName || vendor.name}.`,
+      });
+
+      if (targetId) {
+        navigate(`/purchase-orders/${targetId}`);
+      } else {
+        navigate('/purchase-orders');
+      }
+    } catch (err: any) {
+      const newPO = createPurchaseOrder({
+        vendorId: vendor.id,
+        vendorName: vendor.name,
+        orderDate,
+        dueDate,
+        items,
+        notes,
+      });
+
+      showToast({
+        type: 'success',
+        title: 'Purchase Order Issued',
+        message: `Purchase Order ${newPO.poNumber} confirmed with ${newPO.vendorName}.`,
+      });
+
+      navigate(`/purchase-orders/${newPO.id}`);
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CreditCard } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -7,13 +7,59 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { LifecycleStepper, StepItem } from '../../components/common/LifecycleStepper';
 import { useData } from '../../context/DataContext';
+import { api } from '../../services/api';
 
 export const VendorBillDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { bills, payments, contacts, purchaseOrders } = useData();
+  const [dbBill, setDbBill] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const bill = bills.find(b => b.id === id);
+  useEffect(() => {
+    if (!id) return;
+    api.getVendorBillById(id)
+      .then(res => {
+        if (res && res.bill) {
+          const doc = res.bill;
+          setDbBill({
+            id: String(doc._id || doc.id),
+            billNumber: doc.billNumber || '',
+            purchaseOrderId: doc.purchaseOrderId ? String(doc.purchaseOrderId?._id || doc.purchaseOrderId) : undefined,
+            vendorId: String(doc.vendorId?._id || doc.vendorId || ''),
+            vendorName: doc.vendorName || doc.vendorId?.name || '',
+            billDate: doc.billDate || '',
+            dueDate: doc.dueDate || '',
+            items: (doc.items || []).map((it: any, idx: number) => ({
+              id: String(it._id || it.id || `bill-item-${idx}`),
+              productId: String(it.productId?._id || it.productId || ''),
+              productName: it.productName || '',
+              quantity: Number(it.quantity || 1),
+              unitPrice: Number(it.unitPrice || 0),
+              taxRate: Number(it.taxRate ?? 18),
+              taxAmount: Number(it.taxAmount || 0),
+              total: Number(it.total || 0),
+            })),
+            subtotal: Number(doc.subtotal || 0),
+            taxTotal: Number(doc.taxTotal || 0),
+            grandTotal: Number(doc.grandTotal || 0),
+            paidAmount: Number(doc.paidAmount || 0),
+            outstandingAmount: Number(doc.outstandingAmount ?? (doc.grandTotal - (doc.paidAmount || 0))),
+            status: doc.status || 'posted',
+            notes: doc.notes || '',
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const localBill = bills.find(b => b.id === id || (b as any)._id === id);
+  const bill = dbBill || localBill;
+
+  if (loading && !bill) {
+    return <div className="p-8 text-sm text-slate-500">Loading vendor bill from MongoDB...</div>;
+  }
 
   if (!bill) {
     return (
@@ -86,7 +132,7 @@ export const VendorBillDetail: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-navy-700">
-                  {bill.items.map(item => (
+                  {bill.items?.map((item: any) => (
                     <tr key={item.id}>
                       <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{item.productName}</td>
                       <td className="px-3 py-3">{item.quantity}</td>

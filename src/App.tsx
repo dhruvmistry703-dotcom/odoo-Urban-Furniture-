@@ -19,6 +19,7 @@ import { ProductForm } from './pages/products/ProductForm';
 import { ChartOfAccounts } from './pages/accounting/ChartOfAccounts';
 import { Journals } from './pages/accounting/Journals';
 import { JournalEntryDetail } from './pages/accounting/JournalEntryDetail';
+import { JournalEntries } from './pages/accounting/JournalEntries';
 import { AnalyticAccounts } from './pages/accounting/AnalyticAccounts';
 import { AnalyticAccountForm } from './pages/accounting/AnalyticAccountForm';
 
@@ -184,11 +185,11 @@ export const App: React.FC = () => {
                     }
                   />
 
-                  {/* Master Data - Contacts */}
+                  {/* Master Data - Contacts (ADMIN ONLY) */}
                   <Route
                     path="contacts"
                     element={
-                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                      <ProtectedRoute allowedRoles={['ADMIN']}>
                         <ContactsList />
                       </ProtectedRoute>
                     }
@@ -196,7 +197,7 @@ export const App: React.FC = () => {
                   <Route
                     path="contacts/new"
                     element={
-                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                      <ProtectedRoute allowedRoles={['ADMIN']}>
                         <ContactForm />
                       </ProtectedRoute>
                     }
@@ -204,7 +205,7 @@ export const App: React.FC = () => {
                   <Route
                     path="contacts/:id"
                     element={
-                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                      <ProtectedRoute allowedRoles={['ADMIN']}>
                         <ContactForm />
                       </ProtectedRoute>
                     }
@@ -270,10 +271,42 @@ export const App: React.FC = () => {
                     }
                   />
                   <Route
+                    path="journals/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <Journals />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="journals/:id"
                     element={
                       <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
-                        <JournalEntryDetail />
+                        <Journals />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="journal-entries"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <JournalEntries />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="journal-entries/new"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <JournalEntries />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="journal-entries/:id"
+                    element={
+                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                        <JournalEntries />
                       </ProtectedRoute>
                     }
                   />

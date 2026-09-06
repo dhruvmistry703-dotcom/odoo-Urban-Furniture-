@@ -13,7 +13,7 @@ import { api } from '../../services/api';
 export const InvoiceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { invoices: localInvoices, salesOrders, payments, contacts } = useData();
+  const { invoices: localInvoices, payments, contacts, salesOrders = [] } = useData();
   const { showToast } = useToast();
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);

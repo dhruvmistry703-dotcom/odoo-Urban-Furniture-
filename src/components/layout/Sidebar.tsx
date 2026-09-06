@@ -83,10 +83,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {
         title: 'MASTER DATA',
         items: [
-          { label: 'Contacts & Clients', path: '/contacts', icon: <Users className="w-4 h-4 shrink-0" /> },
+          ...(role === 'ADMIN'
+            ? [{ label: 'Contacts & Clients', path: '/contacts', icon: <Users className="w-4 h-4 shrink-0" /> }]
+            : []),
           { label: 'Products & Furniture', path: '/products', icon: <Package className="w-4 h-4 shrink-0" /> },
           { label: 'Chart of Accounts', path: '/accounts', icon: <BookOpen className="w-4 h-4 shrink-0" /> },
           { label: 'Journals', path: '/journals', icon: <Receipt className="w-4 h-4 shrink-0" /> },
+          { label: 'Journal Entries', path: '/journal-entries', icon: <FileText className="w-4 h-4 shrink-0" /> },
         ],
       },
       {

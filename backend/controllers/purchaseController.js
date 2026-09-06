@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import PurchaseOrder from '../models/PurchaseOrder.js';
 import Contact from '../models/Contact.js';
 import Product from '../models/Product.js';
@@ -22,14 +23,27 @@ export const getPurchaseOrders = async (req, res, next) => {
   }
 };
 
-// @desc    Get purchase order by ID
+// @desc    Get purchase order by ID or PO number
 // @route   GET /api/purchases/:id
 // @access  Protected (ADMIN, ACCOUNTANT)
 export const getPurchaseOrderById = async (req, res, next) => {
   try {
-    const order = await PurchaseOrder.findById(req.params.id)
-      .populate('vendorId', 'name email phone address taxId type')
-      .populate('billId', 'billNumber status paidAmount grandTotal outstandingAmount');
+    const { id } = req.params;
+    let order = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      order = await PurchaseOrder.findById(id)
+        .populate('vendorId', 'name email phone address taxId type')
+        .populate('billId', 'billNumber status paidAmount grandTotal outstandingAmount');
+    }
+
+    if (!order) {
+      order = await PurchaseOrder.findOne({
+        $or: [{ poNumber: id }, { poNumber: new RegExp(`^${id}$`, 'i') }],
+      })
+        .populate('vendorId', 'name email phone address taxId type')
+        .populate('billId', 'billNumber status paidAmount grandTotal outstandingAmount');
+    }
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Purchase order not found' });

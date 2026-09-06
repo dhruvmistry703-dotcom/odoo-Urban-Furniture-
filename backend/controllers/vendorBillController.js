@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import VendorBill from '../models/VendorBill.js';
 import Contact from '../models/Contact.js';
 import PurchaseOrder from '../models/PurchaseOrder.js';
@@ -45,14 +46,27 @@ export const getVendorBills = async (req, res, next) => {
   }
 };
 
-// @desc    Get single vendor bill by ID (with Contact data isolation)
+// @desc    Get single vendor bill by ID or billNumber (with Contact data isolation)
 // @route   GET /api/vendor-bills/:id
 // @access  Protected (ADMIN, ACCOUNTANT, CONTACT)
 export const getVendorBillById = async (req, res, next) => {
   try {
-    const bill = await VendorBill.findById(req.params.id)
-      .populate('vendorId', 'name email phone address taxId')
-      .populate('purchaseOrderId', 'poNumber orderDate status');
+    const { id } = req.params;
+    let bill = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      bill = await VendorBill.findById(id)
+        .populate('vendorId', 'name email phone address taxId')
+        .populate('purchaseOrderId', 'poNumber orderDate status');
+    }
+
+    if (!bill) {
+      bill = await VendorBill.findOne({
+        $or: [{ billNumber: id }, { billNumber: new RegExp(`^${id}$`, 'i') }],
+      })
+        .populate('vendorId', 'name email phone address taxId')
+        .populate('purchaseOrderId', 'poNumber orderDate status');
+    }
 
     if (!bill) {
       return res.status(404).json({

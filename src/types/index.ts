@@ -182,18 +182,16 @@ export interface Account {
   status: AccountStatus;
 }
 
-export type JournalType = 'sales' | 'purchase' | 'cash' | 'bank' | 'general';
-export type JournalStatus = 'active' | 'inactive';
+export type JournalType = 'sales' | 'purchase' | 'cash' | 'bank';
+export type JournalStatus = 'active' | 'inactive' | 'archived';
 
 export interface Journal {
   id: string;
   name: string;
-  code: string;
+  code?: string;
   type: JournalType;
-  debitAccountId: string;
-  debitAccountName: string;
-  creditAccountId: string;
-  creditAccountName: string;
+  defaultAccountId: string;
+  defaultAccountName: string;
   status: JournalStatus;
 }
 
@@ -202,6 +200,8 @@ export interface JournalLine {
   accountId: string;
   accountCode: string;
   accountName: string;
+  partnerId?: string;
+  partnerName?: string;
   debit: number;
   credit: number;
   label?: string;
@@ -212,12 +212,15 @@ export interface JournalEntry {
   entryNumber: string;
   date: string;
   reference: string;
+  journalId?: string;
   journalName?: string;
+  partnerId?: string;
+  partnerName?: string;
   lines: JournalLine[];
   totalDebit: number;
   totalCredit: number;
   isBalanced: boolean;
-  status: 'posted' | 'draft';
+  status: 'posted' | 'draft' | 'cancelled';
 }
 
 export interface AnalyticAccount {
