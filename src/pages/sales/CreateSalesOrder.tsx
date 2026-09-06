@@ -9,6 +9,7 @@ import { Input } from '../../components/ui/Input';
 import { LineItemTable } from '../../components/transactions/LineItemTable';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
+import { api } from '../../services/api';
 import { LineItem } from '../../types';
 
 export const CreateSalesOrder: React.FC = () => {
@@ -45,33 +46,59 @@ export const CreateSalesOrder: React.FC = () => {
   const taxTotal = items.reduce((sum, item) => sum + item.taxAmount, 0);
   const grandTotal = subtotal + taxTotal;
 
-  const handleSubmit = (status: 'draft' | 'confirmed') => {
-    const customer = customers.find(c => c.id === customerId);
+  const handleSubmit = async (status: 'draft' | 'confirmed') => {
+    const customer = customers.find(c => c.id === customerId || (c as any)._id === customerId);
     if (!customer) {
       showToast({ type: 'error', title: 'Customer Required', message: 'Please select a customer.' });
       return;
     }
 
-    const newSO = createSalesOrder({
-      customerId: customer.id,
-      customerName: customer.name,
-      orderDate,
-      dueDate,
-      items,
-      notes,
-    });
+    try {
+      const res = await api.createSalesOrder({
+        customerId: customer.id || (customer as any)._id,
+        customerName: customer.name,
+        orderDate,
+        dueDate,
+        items,
+        notes,
+      });
 
-    if (status === 'draft') {
-      newSO.status = 'draft';
+      const createdSO = res?.salesOrder;
+      const targetId = createdSO?._id || createdSO?.id;
+
+      showToast({
+        type: 'success',
+        title: 'Sales Order Created',
+        message: `Sales Order ${createdSO?.orderNumber || ''} successfully created.`,
+      });
+
+      if (targetId) {
+        navigate(`/sales-orders/${targetId}`);
+      } else {
+        navigate('/sales-orders');
+      }
+    } catch (err: any) {
+      const newSO = createSalesOrder({
+        customerId: customer.id,
+        customerName: customer.name,
+        orderDate,
+        dueDate,
+        items,
+        notes,
+      });
+
+      if (status === 'draft') {
+        newSO.status = 'draft';
+      }
+
+      showToast({
+        type: 'success',
+        title: 'Sales Order Created',
+        message: `Sales Order ${newSO.orderNumber} successfully ${status === 'draft' ? 'saved as draft' : 'confirmed'}.`,
+      });
+
+      navigate(`/sales-orders/${newSO.id}`);
     }
-
-    showToast({
-      type: 'success',
-      title: 'Sales Order Created',
-      message: `Sales Order ${newSO.orderNumber} successfully ${status === 'draft' ? 'saved as draft' : 'confirmed'}.`,
-    });
-
-    navigate(`/sales-orders/${newSO.id}`);
   };
 
   return (

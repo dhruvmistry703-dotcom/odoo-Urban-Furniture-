@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileCheck, XCircle } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -8,14 +8,58 @@ import { Button } from '../../components/ui/Button';
 import { LifecycleStepper, StepItem } from '../../components/common/LifecycleStepper';
 import { useData } from '../../context/DataContext';
 import { useToast } from '../../context/ToastContext';
+import { api } from '../../services/api';
 
 export const SalesOrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { salesOrders, convertSOToInvoice, invoices, payments, updateSalesOrderStatus } = useData();
   const { showToast } = useToast();
+  const [dbOrder, setDbOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const order = salesOrders.find(s => s.id === id);
+  useEffect(() => {
+    if (!id) return;
+    api.getSalesOrderById(id)
+      .then(res => {
+        if (res && res.salesOrder) {
+          const doc = res.salesOrder;
+          setDbOrder({
+            id: String(doc._id || doc.id),
+            orderNumber: doc.orderNumber || '',
+            customerId: String(doc.customerId?._id || doc.customerId || ''),
+            customerName: doc.customerName || doc.customerId?.name || '',
+            orderDate: doc.orderDate || '',
+            dueDate: doc.dueDate || '',
+            items: (doc.items || []).map((it: any, idx: number) => ({
+              id: String(it._id || it.id || `so-item-${idx}`),
+              productId: String(it.productId?._id || it.productId || ''),
+              productName: it.productName || '',
+              quantity: Number(it.quantity || 1),
+              unitPrice: Number(it.unitPrice || 0),
+              taxRate: Number(it.taxRate ?? 18),
+              taxAmount: Number(it.taxAmount || 0),
+              total: Number(it.total || 0),
+            })),
+            subtotal: Number(doc.subtotal || 0),
+            taxTotal: Number(doc.taxTotal || 0),
+            grandTotal: Number(doc.grandTotal || 0),
+            status: doc.status || 'confirmed',
+            invoiceId: doc.invoiceId ? String(doc.invoiceId?._id || doc.invoiceId) : undefined,
+            notes: doc.notes || '',
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const localOrder = salesOrders.find(s => s.id === id || (s as any)._id === id);
+  const order = dbOrder || localOrder;
+
+  if (loading && !order) {
+    return <div className="p-8 text-sm text-slate-500">Loading sales order from MongoDB...</div>;
+  }
 
   if (!order) {
     return (
@@ -51,17 +95,30 @@ export const SalesOrderDetail: React.FC = () => {
     },
   ];
 
-  const handleConvert = () => {
+  const handleConvert = async () => {
     try {
-      const newInv = convertSOToInvoice(order.id);
+      const res = await api.convertSOToInvoice(order._id || order.id);
+      const newInv = res?.invoice;
+      const targetId = newInv?._id || newInv?.id;
+
       showToast({
         type: 'success',
         title: 'Invoice Created',
-        message: `Customer Invoice ${newInv.invoiceNumber} generated from ${order.orderNumber}.`,
+        message: `Customer Invoice ${newInv?.invoiceNumber || ''} generated from ${order.orderNumber}.`,
       });
-      navigate(`/invoices/${newInv.id}`);
+
+      if (targetId) {
+        navigate(`/invoices/${targetId}`);
+      } else {
+        navigate('/invoices');
+      }
     } catch (e: any) {
-      showToast({ type: 'error', title: 'Error', message: e.message || 'Could not convert order.' });
+      try {
+        const fallbackInv = convertSOToInvoice(order.id);
+        navigate(`/invoices/${fallbackInv.id}`);
+      } catch (err: any) {
+        showToast({ type: 'error', title: 'Error', message: e.message || 'Could not convert order.' });
+      }
     }
   };
 
@@ -113,7 +170,7 @@ export const SalesOrderDetail: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-navy-700">
-                  {order.items.map(item => (
+                  {order.items?.map((item: any) => (
                     <tr key={item.id}>
                       <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{item.productName}</td>
                       <td className="px-3 py-3">{item.quantity}</td>

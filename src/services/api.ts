@@ -150,9 +150,18 @@ export const api = {
 
   // Sales Orders & Purchases
   getSalesOrders: () => request('/sales'),
+  getSalesOrderById: (id: string) => request(`/sales/${id}`),
   createSalesOrder: (data: any) => request('/sales', { method: 'POST', body: JSON.stringify(data) }),
+  confirmSalesOrder: (id: string) => request(`/sales/${id}/confirm`, { method: 'POST' }),
+  cancelSalesOrder: (id: string) => request(`/sales/${id}/cancel`, { method: 'POST' }),
+  convertSOToInvoice: (soId: string) => request(`/invoices/from-so/${soId}`, { method: 'POST' }),
+
   getPurchaseOrders: () => request('/purchases'),
+  getPurchaseOrderById: (id: string) => request(`/purchases/${id}`),
   createPurchaseOrder: (data: any) => request('/purchases', { method: 'POST', body: JSON.stringify(data) }),
+  confirmPurchaseOrder: (id: string) => request(`/purchases/${id}/confirm`, { method: 'POST' }),
+  cancelPurchaseOrder: (id: string) => request(`/purchases/${id}/cancel`, { method: 'POST' }),
+  convertPOToVendorBill: (poId: string) => request(`/vendor-bills/from-po/${poId}`, { method: 'POST' }),
 
   // Analytics & Budgets
   getAnalytics: (params?: { status?: string; type?: string }) => {

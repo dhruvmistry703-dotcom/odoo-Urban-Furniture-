@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import SalesOrder from '../models/SalesOrder.js';
 import Contact from '../models/Contact.js';
 import Product from '../models/Product.js';
@@ -22,14 +23,27 @@ export const getSalesOrders = async (req, res, next) => {
   }
 };
 
-// @desc    Get sales order by ID
+// @desc    Get sales order by ID or orderNumber
 // @route   GET /api/sales/:id
 // @access  Protected (ADMIN, ACCOUNTANT)
 export const getSalesOrderById = async (req, res, next) => {
   try {
-    const order = await SalesOrder.findById(req.params.id)
-      .populate('customerId', 'name email phone address taxId type')
-      .populate('invoiceId', 'invoiceNumber status paidAmount grandTotal outstandingAmount');
+    const { id } = req.params;
+    let order = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      order = await SalesOrder.findById(id)
+        .populate('customerId', 'name email phone address taxId type')
+        .populate('invoiceId', 'invoiceNumber status paidAmount grandTotal outstandingAmount');
+    }
+
+    if (!order) {
+      order = await SalesOrder.findOne({
+        $or: [{ orderNumber: id }, { orderNumber: new RegExp(`^${id}$`, 'i') }],
+      })
+        .populate('customerId', 'name email phone address taxId type')
+        .populate('invoiceId', 'invoiceNumber status paidAmount grandTotal outstandingAmount');
+    }
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Sales order not found' });

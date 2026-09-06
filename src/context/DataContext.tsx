@@ -264,6 +264,183 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch {
         // silent
       }
+
+      // 7. Fetch sales orders from MongoDB Atlas
+      try {
+        const soRes = await api.getSalesOrders();
+        if (soRes && soRes.salesOrders && Array.isArray(soRes.salesOrders)) {
+          const mappedSO: SalesOrder[] = soRes.salesOrders.map((doc: any) => ({
+            id: String(doc._id || doc.id),
+            orderNumber: doc.orderNumber || '',
+            customerId: String(doc.customerId?._id || doc.customerId || ''),
+            customerName: doc.customerName || doc.customerId?.name || '',
+            orderDate: doc.orderDate || '',
+            dueDate: doc.dueDate || '',
+            items: (doc.items || []).map((it: any, idx: number) => ({
+              id: String(it._id || it.id || `so-item-${idx}`),
+              productId: String(it.productId?._id || it.productId || ''),
+              productName: it.productName || '',
+              quantity: Number(it.quantity || 1),
+              unitPrice: Number(it.unitPrice || 0),
+              taxRate: Number(it.taxRate ?? 18),
+              taxAmount: Number(it.taxAmount || 0),
+              total: Number(it.total || 0),
+            })),
+            subtotal: Number(doc.subtotal || 0),
+            taxTotal: Number(doc.taxTotal || 0),
+            grandTotal: Number(doc.grandTotal || 0),
+            status: doc.status || 'confirmed',
+            invoiceId: doc.invoiceId ? String(doc.invoiceId?._id || doc.invoiceId) : undefined,
+            notes: doc.notes || '',
+          }));
+          if (mappedSO.length > 0) {
+            setSalesOrders(mappedSO);
+          }
+        }
+      } catch {
+        // silent
+      }
+
+      // 8. Fetch customer invoices from MongoDB Atlas
+      try {
+        const invRes = await api.getInvoices();
+        if (invRes && invRes.invoices && Array.isArray(invRes.invoices)) {
+          const mappedInv: CustomerInvoice[] = invRes.invoices.map((doc: any) => ({
+            id: String(doc._id || doc.id),
+            invoiceNumber: doc.invoiceNumber || '',
+            salesOrderId: doc.salesOrderId ? String(doc.salesOrderId?._id || doc.salesOrderId) : undefined,
+            customerId: String(doc.customerId?._id || doc.customerId || ''),
+            customerName: doc.customerName || doc.customerId?.name || '',
+            invoiceDate: doc.invoiceDate || '',
+            dueDate: doc.dueDate || '',
+            items: (doc.items || []).map((it: any, idx: number) => ({
+              id: String(it._id || it.id || `inv-item-${idx}`),
+              productId: String(it.productId?._id || it.productId || ''),
+              productName: it.productName || '',
+              quantity: Number(it.quantity || 1),
+              unitPrice: Number(it.unitPrice || 0),
+              taxRate: Number(it.taxRate ?? 18),
+              taxAmount: Number(it.taxAmount || 0),
+              total: Number(it.total || 0),
+            })),
+            subtotal: Number(doc.subtotal || 0),
+            taxTotal: Number(doc.taxTotal || 0),
+            grandTotal: Number(doc.grandTotal || 0),
+            paidAmount: Number(doc.paidAmount || 0),
+            outstandingAmount: Number(doc.outstandingAmount ?? (doc.grandTotal - (doc.paidAmount || 0))),
+            status: doc.status || 'pending',
+            notes: doc.notes || '',
+          }));
+          if (mappedInv.length > 0) {
+            setInvoices(mappedInv);
+          }
+        }
+      } catch {
+        // silent
+      }
+
+      // 9. Fetch purchase orders from MongoDB Atlas
+      try {
+        const poRes = await api.getPurchaseOrders();
+        if (poRes && poRes.purchaseOrders && Array.isArray(poRes.purchaseOrders)) {
+          const mappedPO: PurchaseOrder[] = poRes.purchaseOrders.map((doc: any) => ({
+            id: String(doc._id || doc.id),
+            poNumber: doc.poNumber || '',
+            vendorId: String(doc.vendorId?._id || doc.vendorId || ''),
+            vendorName: doc.vendorName || doc.vendorId?.name || '',
+            orderDate: doc.orderDate || '',
+            dueDate: doc.dueDate || '',
+            items: (doc.items || []).map((it: any, idx: number) => ({
+              id: String(it._id || it.id || `po-item-${idx}`),
+              productId: String(it.productId?._id || it.productId || ''),
+              productName: it.productName || '',
+              quantity: Number(it.quantity || 1),
+              unitPrice: Number(it.unitPrice || 0),
+              taxRate: Number(it.taxRate ?? 18),
+              taxAmount: Number(it.taxAmount || 0),
+              total: Number(it.total || 0),
+            })),
+            subtotal: Number(doc.subtotal || 0),
+            taxTotal: Number(doc.taxTotal || 0),
+            grandTotal: Number(doc.grandTotal || 0),
+            status: doc.status || 'confirmed',
+            billId: doc.billId ? String(doc.billId?._id || doc.billId) : undefined,
+            notes: doc.notes || '',
+          }));
+          if (mappedPO.length > 0) {
+            setPurchaseOrders(mappedPO);
+          }
+        }
+      } catch {
+        // silent
+      }
+
+      // 10. Fetch vendor bills from MongoDB Atlas
+      try {
+        const billRes = await api.getVendorBills();
+        if (billRes && billRes.bills && Array.isArray(billRes.bills)) {
+          const mappedBills: VendorBill[] = billRes.bills.map((doc: any) => ({
+            id: String(doc._id || doc.id),
+            billNumber: doc.billNumber || '',
+            purchaseOrderId: doc.purchaseOrderId ? String(doc.purchaseOrderId?._id || doc.purchaseOrderId) : undefined,
+            vendorId: String(doc.vendorId?._id || doc.vendorId || ''),
+            vendorName: doc.vendorName || doc.vendorId?.name || '',
+            billDate: doc.billDate || '',
+            dueDate: doc.dueDate || '',
+            items: (doc.items || []).map((it: any, idx: number) => ({
+              id: String(it._id || it.id || `bill-item-${idx}`),
+              productId: String(it.productId?._id || it.productId || ''),
+              productName: it.productName || '',
+              quantity: Number(it.quantity || 1),
+              unitPrice: Number(it.unitPrice || 0),
+              taxRate: Number(it.taxRate ?? 18),
+              taxAmount: Number(it.taxAmount || 0),
+              total: Number(it.total || 0),
+            })),
+            subtotal: Number(doc.subtotal || 0),
+            taxTotal: Number(doc.taxTotal || 0),
+            grandTotal: Number(doc.grandTotal || 0),
+            paidAmount: Number(doc.paidAmount || 0),
+            outstandingAmount: Number(doc.outstandingAmount ?? (doc.grandTotal - (doc.paidAmount || 0))),
+            status: doc.status || 'posted',
+            notes: doc.notes || '',
+          }));
+          if (mappedBills.length > 0) {
+            setBills(mappedBills);
+          }
+        }
+      } catch {
+        // silent
+      }
+
+      // 11. Fetch payments from MongoDB Atlas
+      try {
+        const payRes = await api.getPayments();
+        if (payRes && payRes.payments && Array.isArray(payRes.payments)) {
+          const mappedPayments: Payment[] = payRes.payments.map((doc: any) => ({
+            id: String(doc._id || doc.id),
+            paymentNumber: doc.paymentNumber || '',
+            type: doc.type || 'customer_payment',
+            contactId: String(doc.contactId?._id || doc.contactId || ''),
+            contactName: doc.contactName || doc.contactId?.name || '',
+            referenceId: doc.referenceId ? String(doc.referenceId?._id || doc.referenceId) : undefined,
+            referenceNumber: doc.referenceNumber || '',
+            paymentDate: doc.paymentDate || '',
+            method: doc.method || 'bank',
+            bankAccount: doc.bankAccount || '',
+            amount: Number(doc.amount || 0),
+            referenceNo: doc.referenceNo || '',
+            notes: doc.notes || '',
+            journalEntryId: doc.journalEntryId ? String(doc.journalEntryId?._id || doc.journalEntryId) : undefined,
+            status: doc.status || 'posted',
+          }));
+          if (mappedPayments.length > 0) {
+            setPayments(mappedPayments);
+          }
+        }
+      } catch {
+        // silent
+      }
     } catch (err) {
       console.warn('[DataContext] MongoDB Atlas sync error:', err);
     }
@@ -399,6 +576,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setSalesOrders(prev => [newSO, ...prev]);
+
+    // Persist to MongoDB Atlas
+    api.createSalesOrder({
+      customerId: soData.customerId,
+      customerName: soData.customerName,
+      orderDate: soData.orderDate,
+      dueDate: soData.dueDate,
+      items: soData.items,
+      notes: soData.notes,
+    }).then(res => {
+      if (res && res.salesOrder) {
+        setSalesOrders(prev => prev.map(s => s.id === newSO.id ? { ...s, id: res.salesOrder._id, orderNumber: res.salesOrder.orderNumber } : s));
+      }
+    }).catch(err => console.warn('[Atlas SalesOrder Error]:', err));
+
     return newSO;
   };
 
@@ -446,6 +638,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return c;
     }));
 
+    // Persist to MongoDB Atlas
+    api.convertSOToInvoice(soId).catch(err => console.warn('[Atlas ConvertSO Error]:', err));
+
     return newInvoice;
   };
 
@@ -473,6 +668,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return c;
     }));
 
+    // Persist to MongoDB Atlas
+    api.createInvoice({
+      customerId: invData.customerId,
+      customerName: invData.customerName,
+      salesOrderId: invData.salesOrderId,
+      invoiceDate: invData.invoiceDate,
+      dueDate: invData.dueDate,
+      items: invData.items,
+      notes: invData.notes,
+    }).catch(err => console.warn('[Atlas CreateInvoice Error]:', err));
+
     return newInvoice;
   };
 
@@ -493,6 +699,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setPurchaseOrders(prev => [newPO, ...prev]);
+
+    // Persist to MongoDB Atlas
+    api.createPurchaseOrder({
+      vendorId: poData.vendorId,
+      vendorName: poData.vendorName,
+      orderDate: poData.orderDate,
+      dueDate: poData.dueDate,
+      items: poData.items,
+      notes: poData.notes,
+    }).then(res => {
+      if (res && res.purchaseOrder) {
+        setPurchaseOrders(prev => prev.map(p => p.id === newPO.id ? { ...p, id: res.purchaseOrder._id, poNumber: res.purchaseOrder.poNumber } : p));
+      }
+    }).catch(err => console.warn('[Atlas PurchaseOrder Error]:', err));
+
     return newPO;
   };
 
@@ -536,6 +757,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return c;
     }));
 
+    // Persist to MongoDB Atlas
+    api.convertPOToVendorBill(poId).catch(err => console.warn('[Atlas ConvertPO Error]:', err));
+
     return newBill;
   };
 
@@ -561,6 +785,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return c;
     }));
+
+    // Persist to MongoDB Atlas
+    api.createVendorBill({
+      vendorId: billData.vendorId,
+      vendorName: billData.vendorName,
+      purchaseOrderId: billData.purchaseOrderId,
+      billDate: billData.billDate,
+      dueDate: billData.dueDate,
+      items: billData.items,
+      notes: billData.notes,
+    }).catch(err => console.warn('[Atlas CreateBill Error]:', err));
 
     return newBill;
   };
@@ -621,16 +856,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         accountName: pData.method === 'bank' ? (pData.bankAccount || 'HDFC Bank Main Account') : 'Petty Cash',
         debit: 0,
         credit: pData.amount,
-        label: `Payout for ${pData.referenceNumber || 'Vendor Bill'}`,
+        label: `Disbursement for ${pData.referenceNumber || ''}`,
       }
     ];
 
-    const newJournalEntry: JournalEntry = {
+    const newJE: JournalEntry = {
       id: `je-${Date.now()}`,
       entryNumber: jeNumber,
       date: pData.paymentDate,
-      reference: pData.referenceNumber || pData.referenceNo || 'Payment Record',
-      journalName: pData.method === 'bank' ? 'Bank Receipts & Payments' : 'Cash Journal',
+      reference: pData.referenceNumber || pData.referenceNo || 'Payment Register',
+      journalId: pData.method === 'bank' ? 'jrn-bank-1' : 'jrn-cash-1',
+      journalName: pData.method === 'bank' ? 'Bank' : 'Cash',
+      partnerId: pData.contactId,
+      partnerName: contactName,
       lines: journalLines,
       totalDebit: pData.amount,
       totalCredit: pData.amount,
@@ -639,63 +877,53 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const newPayment: Payment = {
+      ...pData,
       id: `pay-${Date.now()}`,
       paymentNumber,
-      type: pData.type,
-      contactId: pData.contactId,
       contactName,
-      referenceId: pData.referenceId,
-      referenceNumber: pData.referenceNumber,
-      paymentDate: pData.paymentDate,
-      method: pData.method,
-      bankAccount: pData.bankAccount,
-      amount: pData.amount,
-      referenceNo: pData.referenceNo,
-      notes: pData.notes,
-      journalEntryId: newJournalEntry.id,
+      journalEntryId: newJE.id,
       status: 'posted',
     };
 
-    // Update state
+    setJournalEntries(prev => [newJE, ...prev]);
     setPayments(prev => [newPayment, ...prev]);
-    setJournalEntries(prev => [newJournalEntry, ...prev]);
 
-    // Update target invoice or bill if linked
+    // Update target invoice or bill
     if (pData.referenceId) {
-      if (isCustomerPayment) {
+      if (pData.type === 'customer_payment') {
         setInvoices(prev => prev.map(inv => {
-          if (inv.id === pData.referenceId) {
+          if (inv.id === pData.referenceId || inv.invoiceNumber === pData.referenceNumber) {
             const newPaid = inv.paidAmount + pData.amount;
             const newOutstanding = Math.max(0, inv.grandTotal - newPaid);
-            const status: CustomerInvoice['status'] = newOutstanding === 0 ? 'paid' : 'partially_paid';
+            const newStatus: CustomerInvoice['status'] = newOutstanding === 0 ? 'paid' : (newPaid > 0 ? 'partially_paid' : inv.status);
             return {
               ...inv,
               paidAmount: newPaid,
               outstandingAmount: newOutstanding,
-              status,
+              status: newStatus,
             };
           }
           return inv;
         }));
       } else {
-        setBills(prev => prev.map(b => {
-          if (b.id === pData.referenceId) {
-            const newPaid = b.paidAmount + pData.amount;
-            const newOutstanding = Math.max(0, b.grandTotal - newPaid);
-            const status: VendorBill['status'] = newOutstanding === 0 ? 'paid' : 'partially_paid';
+        setBills(prev => prev.map(bill => {
+          if (bill.id === pData.referenceId || bill.billNumber === pData.referenceNumber) {
+            const newPaid = bill.paidAmount + pData.amount;
+            const newOutstanding = Math.max(0, bill.grandTotal - newPaid);
+            const newStatus: VendorBill['status'] = newOutstanding === 0 ? 'paid' : (newPaid > 0 ? 'partially_paid' : bill.status);
             return {
-              ...b,
+              ...bill,
               paidAmount: newPaid,
               outstandingAmount: newOutstanding,
-              status,
+              status: newStatus,
             };
           }
-          return b;
+          return bill;
         }));
       }
     }
 
-    // Update Contact totalPaid and outstanding
+    // Update Contact totalPaid & outstanding
     setContacts(prev => prev.map(c => {
       if (c.id === pData.contactId) {
         return {
@@ -706,6 +934,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return c;
     }));
+
+    // Persist to MongoDB Atlas
+    api.createPayment({
+      type: pData.type,
+      contactId: pData.contactId,
+      referenceId: pData.referenceId,
+      referenceNumber: pData.referenceNumber,
+      paymentDate: pData.paymentDate,
+      method: pData.method,
+      bankAccount: pData.bankAccount,
+      amount: pData.amount,
+      referenceNo: pData.referenceNo,
+      notes: pData.notes,
+    }).catch(err => console.warn('[Atlas Payment Error]:', err));
 
     // Update bank/cash account balance
     setAccounts(prev => prev.map(acc => {
@@ -724,7 +966,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return acc;
     }));
 
-    return { payment: newPayment, journalEntry: newJournalEntry };
+    return { payment: newPayment, journalEntry: newJE };
   };
 
   const addAccount = (accData: Omit<Account, 'id' | 'balance'> & { balance?: number }) => {

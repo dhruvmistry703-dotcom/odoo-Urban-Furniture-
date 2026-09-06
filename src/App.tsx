@@ -185,11 +185,11 @@ export const App: React.FC = () => {
                     }
                   />
 
-                  {/* Master Data - Contacts */}
+                  {/* Master Data - Contacts (ADMIN ONLY) */}
                   <Route
                     path="contacts"
                     element={
-                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                      <ProtectedRoute allowedRoles={['ADMIN']}>
                         <ContactsList />
                       </ProtectedRoute>
                     }
@@ -197,7 +197,7 @@ export const App: React.FC = () => {
                   <Route
                     path="contacts/new"
                     element={
-                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                      <ProtectedRoute allowedRoles={['ADMIN']}>
                         <ContactForm />
                       </ProtectedRoute>
                     }
@@ -205,7 +205,7 @@ export const App: React.FC = () => {
                   <Route
                     path="contacts/:id"
                     element={
-                      <ProtectedRoute allowedRoles={['ADMIN', 'ACCOUNTANT']}>
+                      <ProtectedRoute allowedRoles={['ADMIN']}>
                         <ContactForm />
                       </ProtectedRoute>
                     }

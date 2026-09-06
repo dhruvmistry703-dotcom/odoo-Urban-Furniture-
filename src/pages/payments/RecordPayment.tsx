@@ -225,6 +225,7 @@ export const RecordPayment: React.FC = () => {
                 label="Payment Amount (₹)"
                 type="number"
                 required
+                step="any"
                 min={0.01}
                 max={selectedDoc ? selectedDoc.outstandingAmount : undefined}
                 value={amount}

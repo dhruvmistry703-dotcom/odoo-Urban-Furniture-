@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import CustomerInvoice from '../models/CustomerInvoice.js';
 import Contact from '../models/Contact.js';
 import SalesOrder from '../models/SalesOrder.js';
@@ -57,14 +58,27 @@ export const getInvoices = async (req, res, next) => {
   }
 };
 
-// @desc    Get single invoice by ID (with Contact data isolation)
+// @desc    Get single invoice by ID or invoiceNumber (with Contact data isolation)
 // @route   GET /api/invoices/:id
 // @access  Protected (ADMIN, ACCOUNTANT, CONTACT)
 export const getInvoiceById = async (req, res, next) => {
   try {
-    const invoice = await CustomerInvoice.findById(req.params.id)
-      .populate('customerId', 'name email phone address taxId')
-      .populate('salesOrderId', 'orderNumber orderDate status');
+    const { id } = req.params;
+    let invoice = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      invoice = await CustomerInvoice.findById(id)
+        .populate('customerId', 'name email phone address taxId')
+        .populate('salesOrderId', 'orderNumber orderDate status');
+    }
+
+    if (!invoice) {
+      invoice = await CustomerInvoice.findOne({
+        $or: [{ invoiceNumber: id }, { invoiceNumber: new RegExp(`^${id}$`, 'i') }],
+      })
+        .populate('customerId', 'name email phone address taxId')
+        .populate('salesOrderId', 'orderNumber orderDate status');
+    }
 
     if (!invoice) {
       return res.status(404).json({
