@@ -1,4 +1,12 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const getApiBase = (): string => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    return `http://${window.location.hostname}:5001/api`;
+  }
+  return 'http://localhost:5001/api';
+};
 
 export interface ApiError {
   message: string;
@@ -6,7 +14,11 @@ export interface ApiError {
 }
 
 export const getToken = (): string | null => {
-  return localStorage.getItem('urban_furniture_token');
+  const token = localStorage.getItem('urban_furniture_token');
+  if (!token || token === 'null' || token === 'undefined' || token === 'none') {
+    return null;
+  }
+  return token;
 };
 
 export const setToken = (token: string): void => {
@@ -32,7 +44,8 @@ export const request = async <T = any>(
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
 
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+  const apiBase = getApiBase();
+  const url = endpoint.startsWith('http') ? endpoint : `${apiBase}${endpoint}`;
 
   const response = await fetch(url, {
     ...options,

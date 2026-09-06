@@ -11,7 +11,7 @@ import { authorizeRoles } from '../middleware/roleMiddleware.js';
 const router = express.Router();
 
 router.use(protect);
-router.use(authorizeRoles('ADMIN', 'ACCOUNTANT'));
+router.use(authorizeRoles('ADMIN', 'ACCOUNTANT', 'CONTACT'));
 
 router.get('/profit-loss', getProfitLoss);
 router.get('/balance-sheet', getBalanceSheet);

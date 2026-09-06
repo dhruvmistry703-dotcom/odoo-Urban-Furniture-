@@ -25,7 +25,7 @@ dotenv.config();
 
 const app = express();
 
-// Allow local development hosts, including the Vite LAN address.
+// Allow local development hosts, including Vite LAN addresses (10.x.x.x, 192.168.x.x, 172.x.x.x, localhost).
 app.use(
   cors({
     origin: (origin, callback) => {

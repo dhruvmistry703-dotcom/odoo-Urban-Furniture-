@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, Scale } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -10,35 +10,53 @@ import { exportBalanceSheetPdf } from '../../utils/reportPdf';
 export const BalanceSheetReport: React.FC = () => {
   const { showToast } = useToast();
   const [report, setReport] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadReport = () => {
+    setLoading(true);
+    setError('');
+    api.getBalanceSheet()
+      .then(response => {
+        if (response && response.report) {
+          setReport(response.report);
+        } else {
+          setReport(response);
+        }
+      })
+      .catch(err => {
+        const msg = err.message || 'Unable to fetch Balance Sheet from API';
+        setError(msg);
+        showToast({ type: 'error', title: 'Unable to load Balance Sheet', message: msg });
+      })
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    api.getBalanceSheet()
-      .then(response => setReport(response.report))
-      .catch(error => showToast({ type: 'error', title: 'Unable to load Balance Sheet', message: error.message }));
-  }, [showToast]);
+    loadReport();
+  }, []);
 
-  if (!report) return <div className="p-8 text-sm text-slate-500">Loading balance sheet from MongoDB...</div>;
+  if (loading) return <div className="p-8 text-sm text-slate-500">Loading balance sheet from MongoDB...</div>;
+  if (!report) return (
+    <div className="p-8 space-y-3">
+      <p className="text-sm text-rose-600">The Balance Sheet report could not be loaded.</p>
+      {error && <p className="text-xs text-slate-500">{error}</p>}
+      <Button variant="outline" onClick={loadReport}>Retry</Button>
+    </div>
+  );
 
-  const cash = report.assetAccounts.find((a: any) => a.code === '1001')?.balance || 0;
-  const bank = report.assetAccounts.find((a: any) => a.code === '1002')?.balance || 0;
-  const ar = report.accountsReceivable;
-  const inventory = report.assetAccounts.find((a: any) => a.code === '1004')?.balance || 0;
-  const fixedAssets = 850000; // Machinery & Showroom Fixtures
+  const assetAccounts = report.assetAccounts || [];
+  const liabilityAccounts = report.liabilityAccounts || [];
+  const capitalAccounts = report.capitalAccounts || [];
+  const accountsReceivable = report.accountsReceivable || 0;
+  const accountsPayable = report.accountsPayable || 0;
 
-  const totalCurrentAssets = cash + bank + ar + inventory;
-  const totalAssets = totalCurrentAssets + fixedAssets;
-
-  const ap = report.accountsPayable;
-  const gstPayable = report.liabilityAccounts.find((a: any) => a.code === '2002')?.balance || 0;
-  const totalLiabilities = ap + gstPayable;
-
-  const capital = report.totalCapital;
-  const netProfit = report.totalIncome - report.totalExpense;
-
-  const totalEquity = capital + netProfit;
+  const totalAssets = (assetAccounts.reduce((sum: number, a: any) => sum + (a.balance || 0), 0)) + accountsReceivable;
+  const totalLiabilities = (liabilityAccounts.reduce((sum: number, a: any) => sum + (a.balance || 0), 0)) + accountsPayable;
+  const totalCapital = capitalAccounts.reduce((sum: number, a: any) => sum + (a.balance || 0), 0);
+  const netProfit = report.netProfit ?? ((report.totalIncome || 0) - (report.totalExpense || 0));
+  const totalEquity = totalCapital + netProfit;
   const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
-
-  const isBalanced = Math.abs(totalAssets - totalLiabilitiesAndEquity) < 500000; // General accounting validation check
 
   const handleExportPDF = () => {
     exportBalanceSheetPdf(report);
@@ -53,7 +71,7 @@ export const BalanceSheetReport: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         title="Balance Sheet"
-        subtitle="As of 30 Sep 2026"
+        subtitle="Statement of Financial Position (MongoDB Atlas Live Data)"
         action={
           <Button variant="primary" icon={<Download className="w-4 h-4" />} onClick={handleExportPDF}>
             Export PDF
@@ -70,7 +88,7 @@ export const BalanceSheetReport: React.FC = () => {
           <h3 className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
             Statement of Financial Position (Balance Sheet)
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">As of September 30, 2026</p>
+          <p className="text-xs text-slate-400 mt-0.5">Live Data from MongoDB Atlas</p>
         </div>
 
         {/* 2-Column Balance Sheet Financial Layout */}
@@ -84,38 +102,18 @@ export const BalanceSheetReport: React.FC = () => {
 
             <div className="space-y-2">
               <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] block">
-                Current Assets
+                Current & Non-Current Asset Accounts (MongoDB)
               </span>
               <div className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
-                <span>Petty Cash</span>
-                <span className="font-mono">₹{cash.toLocaleString('en-IN')}</span>
+                <span>Accounts Receivable (Customer Outstandings)</span>
+                <span className="font-mono">₹{accountsReceivable.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
-                <span>HDFC Bank Main Account</span>
-                <span className="font-mono">₹{bank.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
-                <span>Accounts Receivable (Customer Due)</span>
-                <span className="font-mono">₹{ar.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
-                <span>Finished Goods & Timber Inventory</span>
-                <span className="font-mono">₹{inventory.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between font-bold text-slate-900 dark:text-white pt-1 border-t border-slate-200 dark:border-navy-700">
-                <span>Total Current Assets</span>
-                <span className="font-mono">₹{totalCurrentAssets.toLocaleString('en-IN')}</span>
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-2">
-              <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] block">
-                Non-Current / Fixed Assets
-              </span>
-              <div className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
-                <span>Factory Woodworking Machinery & Showroom Fixtures</span>
-                <span className="font-mono">₹{fixedAssets.toLocaleString('en-IN')}</span>
-              </div>
+              {assetAccounts.map((acc: any) => (
+                <div key={acc._id || acc.id || acc.code} className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
+                  <span>{acc.code ? `${acc.code} - ${acc.name}` : acc.name}</span>
+                  <span className="font-mono">₹{(acc.balance || 0).toLocaleString('en-IN')}</span>
+                </div>
+              ))}
             </div>
 
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg border border-emerald-300 dark:border-emerald-800 flex justify-between font-extrabold text-sm text-slate-900 dark:text-white mt-6">
@@ -133,16 +131,18 @@ export const BalanceSheetReport: React.FC = () => {
 
             <div className="space-y-2">
               <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] block">
-                Current Liabilities
+                Liability Accounts (MongoDB)
               </span>
               <div className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
                 <span>Accounts Payable (Supplier Bills)</span>
-                <span className="font-mono">₹{ap.toLocaleString('en-IN')}</span>
+                <span className="font-mono">₹{accountsPayable.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
-                <span>GST Output Payable (18%)</span>
-                <span className="font-mono">₹{gstPayable.toLocaleString('en-IN')}</span>
-              </div>
+              {liabilityAccounts.map((acc: any) => (
+                <div key={acc._id || acc.id || acc.code} className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
+                  <span>{acc.code ? `${acc.code} - ${acc.name}` : acc.name}</span>
+                  <span className="font-mono">₹{(acc.balance || 0).toLocaleString('en-IN')}</span>
+                </div>
+              ))}
               <div className="flex justify-between font-bold text-slate-900 dark:text-white pt-1 border-t border-slate-200 dark:border-navy-700">
                 <span>Total Liabilities</span>
                 <span className="font-mono">₹{totalLiabilities.toLocaleString('en-IN')}</span>
@@ -151,14 +151,16 @@ export const BalanceSheetReport: React.FC = () => {
 
             <div className="space-y-2 pt-2">
               <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] block">
-                Owner's Equity
+                Owner's Equity & Retained Profits
               </span>
+              {capitalAccounts.map((acc: any) => (
+                <div key={acc._id || acc.id || acc.code} className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
+                  <span>{acc.code ? `${acc.code} - ${acc.name}` : acc.name}</span>
+                  <span className="font-mono">₹{(acc.balance || 0).toLocaleString('en-IN')}</span>
+                </div>
+              ))}
               <div className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
-                <span>Owner Capital & Retained Earnings</span>
-                <span className="font-mono">₹{capital.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between text-slate-700 dark:text-slate-300 pl-2">
-                <span>Current Year Net Profit</span>
+                <span>Current Net Operating Result</span>
                 <span className="font-mono text-emerald-600">₹{netProfit.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between font-bold text-slate-900 dark:text-white pt-1 border-t border-slate-200 dark:border-navy-700">
